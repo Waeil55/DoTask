@@ -249,10 +249,14 @@ try {
 
   // ---- 2. "Ask if risky": approval card before clicking Send ----
   await panel.evaluate(() => chrome.storage.local.get('settings').then(({ settings }) => chrome.storage.local.set({ settings: { ...settings, permissionMode: 'smart' } })))
-  await panel.waitForTimeout(300)
+  // wait until the panel has reloaded its settings (the mode buttons show it), not a fixed time
+  await panel.waitForSelector('#view-do button[aria-pressed="true"] >> text=Ask if risky', { timeout: 10000 })
   await panel.fill('#view-do .composer-input', 'send the message')
   await panel.press('#view-do .composer-input', 'Enter')
-  await panel.waitForSelector('#view-do .approval', { timeout: 30000 })
+  await panel.waitForSelector('#view-do .approval', { timeout: 30000 }).catch(async (e) => {
+    const shown = (await panel.locator('#view-do').innerText().catch(() => '')).slice(-600)
+    throw new Error(`no approval card. #out2="${await target.textContent('#out2')}". Do screen ends with:\n${shown}\n${e.message.split('\n')[0]}`)
+  })
   assert.equal(await target.textContent('#out2'), '', 'nothing clicked before approval')
   await panel.click('#view-do .approval >> text=✓ Approve')
   await panel.waitForSelector('#view-do .msg.ai >> text=E2E sent ok', { timeout: 30000 })

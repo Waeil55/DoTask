@@ -46,9 +46,13 @@ export function managedReady() {
   return managedPromise
 }
 
+let managedSlow = false // the policy lookup missed its first 400 ms: stop waiting on it (the panel reloads when it lands)
+
 export async function getManaged() {
   if (cachedManaged) return cachedManaged
+  if (managedSlow) return {}
   await Promise.race([managedReady(), new Promise(r => setTimeout(r, 400))])
+  if (!cachedManaged) managedSlow = true
   return cachedManaged || {}
 }
 
