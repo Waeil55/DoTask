@@ -79,7 +79,8 @@ export async function saveSettings(patch) {
 
 export function onSettingsChanged(fn) {
   chrome.storage.onChanged.addListener((changes, area) => {
-    if (area === 'managed') { cachedManaged = null; managedPromise = null; managedReady().then(fn); return }
+    // a policy change: look it up again, and wait for it again like the first time
+    if (area === 'managed') { cachedManaged = null; managedPromise = null; managedSlow = false; managedReady().then(fn); return }
     if (area === 'local' && changes.settings) fn()
   })
 }

@@ -317,8 +317,10 @@
     if (typeof el.focus === 'function') el.focus({ preventScroll: true })
     el.dispatchEvent(new W.PointerEvent('pointerup', { ...opts, pointerId: 1, isPrimary: true }))
     el.dispatchEvent(new W.MouseEvent('mouseup', opts))
-    // el.click() would report position (0, 0); a point click must carry its coordinates
-    if (at) el.dispatchEvent(new W.MouseEvent('click', { ...opts, detail: 1 }))
+    // el.click() would report position (0, 0); a point click must carry its coordinates. Labels
+    // are the exception: Chrome ignores a positioned click on a label while text is selected,
+    // and a label does not need the exact spot anyway
+    if (at && !el.closest?.('label')) el.dispatchEvent(new W.MouseEvent('click', { ...opts, detail: 1 }))
     else el.click()
   }
   function setNativeValue(el, value) {
@@ -380,10 +382,10 @@
     let ox = 0, oy = 0
     while (el && (el.tagName === 'IFRAME' || el.tagName === 'FRAME')) {
       try {
-        const r = el.getBoundingClientRect()
         const inner = el.contentDocument // null for another site's frame
         if (!inner) break
-        ox += r.left; oy += r.top
+        const b = frameContentBox(el)
+        ox += b.left; oy += b.top
         doc = inner
         el = doc.elementFromPoint(x - ox, y - oy)
       } catch { break }
@@ -393,7 +395,14 @@
       if (!inner || inner === el) break
       el = inner
     }
-    return { el, x: x - ox, y: y - oy }
+    // nested: el sits in a same-origin frame of this page, not in this page itself
+    return { el, x: x - ox, y: y - oy, nested: doc !== document }
+  }
+  /** Where a frame's page starts in its parent's viewport: inside its border and padding. */
+  function frameContentBox(frame) {
+    const r = frame.getBoundingClientRect()
+    const cs = frame.ownerDocument.defaultView.getComputedStyle(frame)
+    return { left: r.left + frame.clientLeft + (parseFloat(cs.paddingLeft) || 0), top: r.top + frame.clientTop + (parseFloat(cs.paddingTop) || 0) }
   }
 
   async function act(a) {
@@ -412,8 +421,8 @@
         if (!el) throw new Error('Nothing clickable at that point')
         if (el.tagName === 'IFRAME' || el.tagName === 'FRAME') {
           // another site's frame: hand the click to the script running inside it
-          const r = el.getBoundingClientRect()
-          return { ok: true, forward: { src: el.src, x: p.x - r.left, y: p.y - r.top } }
+          const b = frameContentBox(el)
+          return { ok: true, forward: { src: el.src, x: p.x - b.left, y: p.y - b.top, nested: p.nested } }
         }
         // click the exact point, not the element's centre: on a canvas, map or video the
         // target is one spot inside a big element

@@ -84,6 +84,23 @@ const INNER = `<!doctype html><html><head><title>Inner</title></head><body>
 </script>
 </body></html>`
 
+// a page on 127.0.0.1 whose same-origin wrapper frame embeds another site's frame (a course
+// player inside a wrapper page); thick borders and padding check the coordinate maths
+const NESTED = `<!doctype html><html><head><title>Nested frames</title></head><body style="margin:20px">
+<h1>Nested frames</h1>
+<iframe id="wrap" src="/wrap.html" width="560" height="320" style="border:12px solid #888;padding:9px"></iframe>
+</body></html>`
+const WRAP = () => `<!doctype html><html><body style="margin:15px"><p>Course player</p>
+<iframe id="xi" src="${base.replace('127.0.0.1', 'localhost')}/xinner.html" width="460" height="200" style="border:7px solid #444;padding:5px"></iframe>
+</body></html>`
+const XINNER = `<!doctype html><html><body style="margin:0">
+<canvas id="xc" width="400" height="150" style="display:block;background:#eee"></canvas><p id="xout"></p>
+<script>
+  const c = document.getElementById('xc')
+  c.addEventListener('click', (e) => { const r = c.getBoundingClientRect(); document.getElementById('xout').textContent = Math.round(e.clientX - r.left) + ',' + Math.round(e.clientY - r.top) })
+</script>
+</body></html>`
+
 const CANVAS_PAGE = `<!doctype html><html><head><title>Essay 1</title></head><body>
 <div id="application" class="ic-app"><h1>Essay 1</h1><p>Canvas mock</p></div></body></html>`
 
@@ -101,6 +118,9 @@ const server = http.createServer((req, res) => {
     if (p === '/form.html') { res.writeHead(200, { 'Content-Type': 'text/html' }); return res.end(FORM) }
     if (p === '/frames.html') { res.writeHead(200, { 'Content-Type': 'text/html' }); return res.end(FRAMES()) }
     if (p === '/inner.html') { res.writeHead(200, { 'Content-Type': 'text/html' }); return res.end(INNER) }
+    if (p === '/nested.html') { res.writeHead(200, { 'Content-Type': 'text/html' }); return res.end(NESTED) }
+    if (p === '/wrap.html') { res.writeHead(200, { 'Content-Type': 'text/html' }); return res.end(WRAP()) }
+    if (p === '/xinner.html') { res.writeHead(200, { 'Content-Type': 'text/html' }); return res.end(XINNER) }
     if (p === '/api/v1/courses/1/users') return json(res, students)
     if (p === '/api/v1/courses/1/students/submissions') return json(res, u.searchParams.get('student_ids[]') === '103' ? leeSubs : [])
     if (p === '/courses/1/assignments/10') {
@@ -386,6 +406,26 @@ try {
   assert.ok(Math.abs(cx - 250) <= 1 && Math.abs(cy - 20) <= 1, `canvas click landed at ${cx},${cy}, wanted 250,20`)
   await panel.bringToFront()
   ok('screen-coordinate clicks hit the exact spot on a canvas')
+
+  // ...and inside another site's frame that sits in a same-origin wrapper frame
+  const nestedPage = await context.newPage()
+  await nestedPage.goto(`${base}/nested.html`)
+  const player = nestedPage.frameLocator('#wrap').frameLocator('#xi')
+  await player.locator('#xc').waitFor()
+  const nestedTab = await tabIdOf(`${base}/nested.html`)
+  // Playwright's box for a frame inside a frame leaves out the wrapper's border, so find the
+  // canvas's true screen position with one real mouse click first
+  const xb = await player.locator('#xc').boundingBox()
+  await nestedPage.mouse.click(xb.x + 100, xb.y + 100)
+  const [rx, ry] = String(await player.locator('#xout').textContent()).split(',').map(Number)
+  const origin = { x: xb.x + 100 - rx, y: xb.y + 100 - ry }
+  await player.locator('#xout').evaluate(el => { el.textContent = '' })
+  await panel.evaluate(async ([tab, x, y]) => (await import('./lib/tabs.js')).clickAt(tab, x, y), [nestedTab, origin.x + 300, origin.y + 40])
+  const [nx, ny] = String(await player.locator('#xout').textContent()).split(',').map(Number)
+  assert.ok(Math.abs(nx - 300) <= 1 && Math.abs(ny - 40) <= 1, `nested frame click landed at ${nx},${ny}, wanted 300,40`)
+  await nestedPage.close()
+  await panel.bringToFront()
+  ok("screen-coordinate clicks reach another site's frame inside a wrapper frame")
 
   // guided course mode: Next page presses the course player's Continue (never "Submit quiz")
   await panel.goto(panelUrl(`view=study&tab=${framesTab}`))

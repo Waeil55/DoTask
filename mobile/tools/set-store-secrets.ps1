@@ -1,0 +1,70 @@
+# Stores the App Store secrets in the GitHub repo, so the "iOS" and "iOS App Store listing" workflows can
+# sign, upload and fill in App Review Information. Run it yourself; it asks for each value and sends it
+# straight to GitHub (nothing is saved on this PC or printed).
+#   powershell -NoProfile -ExecutionPolicy Bypass -File mobile\tools\set-store-secrets.ps1
+# Needs the GitHub CLI signed in (gh auth status). Re-run any time to replace a value; Enter keeps it.
+
+$ErrorActionPreference = 'Stop'
+$Repo = 'Waeil55/DoTask'
+
+function Have($name) { (gh secret list -R $Repo 2>$null | ForEach-Object { ($_ -split "`t")[0] }) -contains $name }
+function SetValue($name, $value) {
+  # --body keeps the value exact (piping in Windows PowerShell would add a line break)
+  gh secret set $name -R $Repo --body $value | Out-Null
+  if ($LASTEXITCODE -ne 0) { throw "Could not set $name" }
+  Write-Host "  saved $name" -ForegroundColor Green
+}
+function Ask($name, $prompt, $default) {
+  $hint = if ($default) { " [Enter = $default]" } elseif (Have $name) { ' [Enter = keep the saved one]' } else { '' }
+  $v = (Read-Host "$prompt$hint").Trim()
+  if (-not $v) { $v = $default }
+  if ($v) { SetValue $name $v } elseif (-not (Have $name)) { Write-Host "  skipped $name (still missing)" -ForegroundColor Yellow }
+}
+function AskHidden($name, $prompt) {
+  $hint = if (Have $name) { ' [Enter = keep the saved one]' } else { '' }
+  $s = Read-Host "$prompt$hint" -AsSecureString
+  $v = [Runtime.InteropServices.Marshal]::PtrToStringBSTR([Runtime.InteropServices.Marshal]::SecureStringToBSTR($s)).Trim()
+  if ($v) { SetValue $name $v } elseif (-not (Have $name)) { Write-Host "  skipped $name (still missing)" -ForegroundColor Yellow }
+  $v = $null
+}
+
+gh auth status 1>$null 2>$null
+if ($LASTEXITCODE -ne 0) { throw 'Sign in to GitHub first: gh auth login' }
+Write-Host "`nDoTask store secrets for $Repo`n" -ForegroundColor Cyan
+
+# 1. Apple team
+Ask 'APPLE_TEAM_ID' 'Apple Team ID' 'UC8SHC93NW'
+
+# 2. App Store Connect API key (the same Team key the Kiddos workflows use is fine)
+Write-Host "`nApp Store Connect API key: pick the AuthKey_XXXXXXXXXX.p8 file you downloaded from"
+Write-Host "Users and Access > Integrations > App Store Connect API (Team key, Admin access)."
+Write-Host 'If you no longer have it, create a new Team key there (Apple lets you download it once).'
+Add-Type -AssemblyName System.Windows.Forms
+$dlg = New-Object System.Windows.Forms.OpenFileDialog
+$dlg.Title = 'Pick your App Store Connect key (AuthKey_XXXXXXXXXX.p8)'
+$dlg.Filter = 'App Store Connect key (*.p8)|*.p8'
+$dlg.InitialDirectory = Join-Path $HOME 'Downloads'
+if ($dlg.ShowDialog() -eq 'OK') {
+  $p8 = Get-Content -Raw -LiteralPath $dlg.FileName
+  if ($p8 -notmatch 'BEGIN PRIVATE KEY') { throw 'That file is not an App Store Connect .p8 key' }
+  SetValue 'ASC_KEY_P8' $p8.Trim()
+  $p8 = $null
+  $keyId = if ([IO.Path]::GetFileName($dlg.FileName) -match '^AuthKey_([A-Z0-9]{10})\.p8$') { $Matches[1] } else { $null }
+  Ask 'ASC_KEY_ID' 'Key ID (10 characters, shown next to the key)' $keyId
+} elseif (-not (Have 'ASC_KEY_P8')) {
+  Write-Host '  skipped ASC_KEY_P8 (still missing)' -ForegroundColor Yellow
+}
+Ask 'ASC_ISSUER_ID' 'Issuer ID (shown above the list of keys on the same page)' $null
+
+# 3. App Review contact and review-only Gemini key (private App Review Information, never public)
+Write-Host ''
+Ask 'REVIEW_CONTACT_NAME' 'Your first and last name, for App Review' $null
+Ask 'REVIEW_PHONE' 'Phone number App Review may call, with country code (e.g. +1 555 123 4567)' $null
+Write-Host "`nReview-only Gemini key: create a NEW key for Apple's reviewers (Google AI Studio opens now)."
+Write-Host 'Delete it in AI Studio once DoTask is approved.'
+Start-Process 'https://aistudio.google.com/apikey'
+AskHidden 'REVIEWER_GEMINI_KEY' 'Paste the review-only Gemini key (hidden)'
+
+Write-Host "`nSaved secrets:" -ForegroundColor Cyan
+gh secret list -R $Repo
+Write-Host "`nDone. Tell Claude, or run: gh workflow run ios.yml -R $Repo -f upload=true" -ForegroundColor Cyan

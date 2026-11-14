@@ -465,7 +465,9 @@ export function mount(root, ctx) {
         context: `Assignment: ${a.name}.${d?.comment ? `\nMy feedback on this submission: ${truncate(d.comment, 1500)}` : ''}`,
         sendLabel: `Send to ${first}`,
         intentPlaceholder: 'What do you want to tell them? (optional)',
-        recipientName: first, // filled in on the device; the AI only sees {{NAME}}
+        // filled in on the device and hidden in the thread: the AI only sees {{NAME}}
+        recipientName: sub.user?.name ? first : undefined,
+        recipientFullName: sub.user?.name,
         onSend: async (text) => {
           const ok = await confirmDialog({ title: `Send this comment to ${nameOf(sub)}?`, body: truncate(text, 500), ok: `Send to ${first}` })
           if (!ok) return

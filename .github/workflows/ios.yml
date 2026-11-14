@@ -178,6 +178,22 @@ jobs:
           mkdir -p "$RUNNER_TEMP/logs"
           find "${TMPDIR:-/tmp}" -maxdepth 1 -name '*.xcdistributionlogs' -exec cp -R {} "$RUNNER_TEMP/logs/" \; || true
 
+      # GitHub hides secrets in the console log, not inside uploaded files
+      - name: Hide the account IDs in the logs
+        if: failure()
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          [ -d "$RUNNER_TEMP/logs" ] || exit 0
+          for v in "$ASC_KEY_ID" "$ASC_ISSUER_ID" "$APPLE_TEAM_ID"; do
+            [ -n "$v" ] || continue
+            grep -rlF -- "$v" "$RUNNER_TEMP/logs" | while IFS= read -r f; do
+              HIDE="$v" perl -pi -e 's/\Q$ENV{HIDE}\E/***/g' "$f"
+            done
+          done
+
       - name: Keep dSYMs and logs for debugging
         if: failure()
         uses: actions/upload-artifact@v4

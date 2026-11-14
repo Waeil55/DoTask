@@ -48,15 +48,17 @@ Repository, Settings, Secrets and variables, Actions, New repository secret:
 | `ASC_ISSUER_ID` | Issuer ID from the same page |
 | `ASC_KEY_P8` | base64 of the `.p8` file (the workflow also accepts the raw file text) |
 | `APPLE_TEAM_ID` | Team ID |
+| `REVIEW_CONTACT_NAME` | Your first and last name for App Review (listing workflow only) |
 | `REVIEW_PHONE` | Phone number App Review may call, with country code (listing workflow only) |
 | `REVIEWER_GEMINI_KEY` | A review-only Gemini key (listing workflow only; see "App Review Information" in `store/app-store.md`) |
 
-The last two go only into the private App Review Information, never into the public listing. With the GitHub CLI
+The last three go only into the private App Review Information, never into the public listing. With the GitHub CLI
 (each command asks for the value, so nothing lands in your shell history):
 
     gh secret set ASC_KEY_ID -R Waeil55/DoTask
     gh secret set ASC_ISSUER_ID -R Waeil55/DoTask
     gh secret set APPLE_TEAM_ID -R Waeil55/DoTask
+    gh secret set REVIEW_CONTACT_NAME -R Waeil55/DoTask
     gh secret set REVIEW_PHONE -R Waeil55/DoTask
     gh secret set REVIEWER_GEMINI_KEY -R Waeil55/DoTask
     Get-Content "$HOME\Downloads\AuthKey_XXXXXXXXXX.p8" -Raw | gh secret set ASC_KEY_P8 -R Waeil55/DoTask

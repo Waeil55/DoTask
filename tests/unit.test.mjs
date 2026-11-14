@@ -348,4 +348,29 @@ test('reply drafts get the name filled in on the device', async () => {
   assert.equal(fillName('Hi [Name],', 'Sam'), 'Hi Sam,')
   assert.equal(fillName('See [Link] and [Assignment]', 'Sam'), 'See [Link] and [Assignment]')
   assert.equal(fillName('Hi {{NAME}}', ''), 'Hi {{NAME}}')
+  // a bare [Name] is the recipient only in a greeting; in a sign-off it means the sender
+  assert.equal(fillName('Dear [First Name], ok.\nThanks,\n[Name]', 'Sam'), 'Dear Sam, ok.\nThanks,\n[Name]')
+})
+
+test('the student name never reaches the AI, even from earlier replies', async () => {
+  const { hideName } = await import('../extension/lib/util.js')
+  assert.equal(hideName('Great work, Lee! (Lee, Sam) - sam', 'Sam Lee', 'Lee, Sam'), 'Great work, {{NAME}}! ({{NAME}}) - {{NAME}}')
+  assert.equal(hideName('I will tell Will that Willa came', 'Will Park'), 'I will tell {{NAME}} that Willa came')
+  assert.equal(hideName('Student (Oct 3): hi', 'Test Student'), 'Student (Oct 3): hi')
+  assert.equal(hideName('no names here', ''), 'no names here')
+
+  const { draftReply } = await import('../extension/lib/compose.js')
+  let sent = ''
+  const ai = { generate: async (req) => { sent = req.prompt; return { text: 'Hi {{NAME}}, of course. See you Monday.' } } }
+  const out = await draftReply({
+    ai, settings: {}, recipientName: 'Sam', recipientFullName: 'Sam Lee',
+    original: 'Me (Oct 2): Hi Sam, yes you can resubmit.\n\nStudent (Oct 3): thanks! - sam lee',
+    context: 'My feedback: Samuel-style citations. LEE should cite sources.',
+    intent: "tell Sam it's fine"
+  })
+  assert.doesNotMatch(sent, /\bsam\b|\blee\b/i)
+  assert.match(sent, /Hi \{\{NAME\}\}, yes you can resubmit/)
+  assert.match(sent, /Samuel-style/)
+  assert.match(sent, /Student \(Oct 3\)/)
+  assert.equal(out, 'Hi Sam, of course. See you Monday.')
 })

@@ -219,10 +219,19 @@ export async function clickAt(tabId, x, y) {
   for (let depth = 0; depth < 4; depth++) {
     const r = await send(tabId, { type: 'act', action: { type: 'click_xy', x, y } }, frameId)
     if (!r?.forward) return r
-    const kids = (await allFrames(tabId)).filter(f => f.parentFrameId === frameId)
+    const frames = await allFrames(tabId)
+    // a nested frame sits inside a same-origin frame of this one (a player inside a wrapper
+    // page), so it is a grandchild or deeper: look through all frames below this one
+    const below = new Set([frameId])
+    for (let grew = true; grew;) {
+      grew = false
+      for (const f of frames) if (!below.has(f.frameId) && below.has(f.parentFrameId)) { below.add(f.frameId); grew = true }
+    }
+    const kids = frames.filter(f => f.frameId !== frameId && below.has(f.frameId) &&
+      (r.forward.nested ? f.parentFrameId !== frameId : f.parentFrameId === frameId))
     const kid = kids.find(f => f.url === r.forward.src) ||
       kids.find(f => originOf(f.url) && originOf(f.url) === originOf(r.forward.src)) ||
-      (kids.length === 1 ? kids[0] : null)
+      (!r.forward.nested && kids.length === 1 ? kids[0] : null)
     if (!kid) throw new Error('That spot is inside an embedded frame DoTask cannot reach')
     frameId = kid.frameId; x = r.forward.x; y = r.forward.y
   }

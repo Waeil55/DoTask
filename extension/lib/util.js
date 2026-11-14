@@ -91,6 +91,52 @@ export function truncate(s, n) {
   return s.length > n ? s.slice(0, n) + `… [${s.length - n} more chars]` : s
 }
 
+// ---- keeping a person's name out of AI requests ----
+// The AI writes NAME_TOKEN where the name goes and the device fills it in, so the name itself
+// never has to be sent. hideName() swaps the name back to the token in text that mentions it.
+export const NAME_TOKEN = '{{NAME}}'
+// "[Student Name]", "[student's first name]", "[Recipient Name]": always the person written to
+const NAMED_PLACEHOLDER = /\[(?:the\s+)?(?:student|recipient|pupil)(?:'s)?\s+(?:first\s+|full\s+)?name\]/gi
+// a bare "[Name]" only after a greeting: elsewhere (a sign-off) it may mean the sender
+const GREETING_PLACEHOLDER = /\b(hi|hello|hey|dear|good\s+(?:morning|afternoon|evening))(,?\s+)\[(?:first\s+|full\s+)?name\]/gi
+// first names that are also everyday words: only their capitalised form counts as the name
+const NAME_WORDS = new Set(('will may june april august grace hope joy faith rose mark bill pat sue art rob jack frank ' +
+  'amber ivy lily sky summer autumn dawn eve gene glen guy jean ray rich sandy max chase hunter page reed wade drew dean ' +
+  'don penny ruby crystal ginger holly iris jade pearl violet brook cliff dale lane miles nick pierce rusty stone storm ' +
+  'angel star sunny bud cash colt duke king prince bob carol destiny harmony honor justice liberty mercy patience ' +
+  'river ocean rain bay sage hazel heather daisy blossom honey melody precious unique royal major').split(' '))
+// words the app itself writes around names ("Student (date): …"), and Canvas's "Test Student"
+const NOT_NAMES = new Set(['student', 'test', 'anonymous', 'me', 'you'])
+const escRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+
+/** Puts `name` where text has NAME_TOKEN or a "[Student Name]"-style placeholder. */
+export function fillName(text, name) {
+  if (!name) return text
+  return String(text).split(NAME_TOKEN).join(name)
+    .replace(NAMED_PLACEHOLDER, name)
+    .replace(GREETING_PLACEHOLDER, (m, hi, gap) => hi + gap + name)
+}
+
+/** Replaces each given name (the whole name and every part of it) with NAME_TOKEN. */
+export function hideName(text, ...names) {
+  let out = String(text ?? '')
+  const all = new Set()
+  for (const raw of names) {
+    const full = String(raw ?? '').replace(/\s+/g, ' ').trim()
+    if (!full) continue
+    all.add(full)
+    for (const p of full.split(/[\s,]+|-(?=\p{L})/u)) {
+      if (p.replace(/[^\p{L}]/gu, '').length >= 2 && !NOT_NAMES.has(p.toLowerCase())) all.add(p)
+    }
+  }
+  if (!out || !all.size) return out
+  for (const n of [...all].sort((a, b) => b.length - a.length)) {
+    const flags = NAME_WORDS.has(n.toLowerCase()) ? 'gu' : 'giu'
+    out = out.replace(new RegExp(`(?<![\\p{L}\\p{N}_])${escRe(n)}(?![\\p{L}\\p{N}_])`, flags), NAME_TOKEN)
+  }
+  return out
+}
+
 /** Short text for the screen: cut at a word boundary with "…". (truncate() is for AI prompts.) */
 export function shorten(s, n) {
   s = String(s ?? '').replace(/\s+/g, ' ').trim()

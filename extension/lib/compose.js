@@ -1,6 +1,6 @@
 // Writing replies: emails, Canvas inbox messages, submission comments, discussion posts.
 
-import { truncate } from './util.js'
+import { truncate, NAME_TOKEN, fillName, hideName } from './util.js'
 
 export const TONES = ['Warm', 'Professional', 'Brief', 'Encouraging', 'Firm but kind', 'Formal', 'Friendly']
 
@@ -13,29 +13,23 @@ export function composeSystem(settings) {
 ${settings.teacherName ? `- If a sign-off fits, sign as "${settings.teacherName}".` : ''}`
 }
 
-// The AI writes this where the recipient's name goes; the app fills in the name on the device,
-// so a student's name never has to be sent to the AI.
-const NAME_TOKEN = '{{NAME}}'
-const NAME_PLACEHOLDER = /\[(?:the\s+)?(?:student|recipient|pupil)?(?:'s)?\s*(?:first\s+|full\s+)?name\]/gi
-
-/** Puts `name` where the draft has {{NAME}} or a "[Student Name]"-style placeholder. */
-export function fillName(text, name) {
-  if (!name) return text
-  return String(text).split(NAME_TOKEN).join(name).replace(NAME_PLACEHOLDER, name)
-}
+export { fillName }
 
 /**
  * @param {{ai, settings, kind?: string, original?: string, context?: string, intent?: string,
  *          tone?: string, language?: string, signal?: AbortSignal, onText?: Function,
- *          recipientName?: string}} o  recipientName stays on the device (see NAME_TOKEN)
+ *          recipientName?: string, recipientFullName?: string}} o
+ *   recipientName (first name) stays on the device: the AI only ever sees NAME_TOKEN, and the
+ *   name is also hidden in the earlier messages, context and intent (sent replies contain it).
  */
 export async function draftReply(o) {
+  const hide = (t) => o.recipientName ? hideName(t, o.recipientFullName, o.recipientName) : t
   const lines = []
   lines.push(`KIND: ${o.kind || 'reply'}`)
   if (o.recipientName) lines.push(`THEIR NAME: write ${NAME_TOKEN} wherever you would use their first name, for example "Hi ${NAME_TOKEN},". I fill it in.`)
-  if (o.context) lines.push(`CONTEXT (for you only):\n${truncate(o.context, 6000)}`)
-  if (o.original) lines.push(`MESSAGE TO REPLY TO:\n"""\n${truncate(o.original, 12000)}\n"""`)
-  lines.push(`WHAT I WANT TO SAY: ${o.intent || 'Write the best helpful reply.'}`)
+  if (o.context) lines.push(`CONTEXT (for you only):\n${truncate(hide(o.context), 6000)}`)
+  if (o.original) lines.push(`MESSAGE TO REPLY TO:\n"""\n${truncate(hide(o.original), 12000)}\n"""`)
+  lines.push(`WHAT I WANT TO SAY: ${hide(o.intent) || 'Write the best helpful reply.'}`)
   lines.push(`TONE: ${o.tone || 'Warm'}   LANGUAGE: ${o.language || o.settings.language || 'English'}`)
   const r = await o.ai.generate({
     tier: 'smart', system: composeSystem(o.settings), prompt: lines.join('\n\n'),

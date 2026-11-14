@@ -5,7 +5,7 @@
 //  3. Drafts are stored under [host, course, assignment, userId, attempt].
 //  4. Before posting, the submission is re-fetched by userId and the attempt is re-checked.
 
-import { htmlToText, randomToken, truncate, clampScore, isAbort } from './util.js'
+import { htmlToText, randomToken, truncate, clampScore, isAbort, hideName, fillName } from './util.js'
 import { fileToAiPart } from './files.js'
 import { addFeedback, audit, feedbackForStudent, saveDraft, upsertStudent, getDraft } from './db.js'
 
@@ -126,7 +126,12 @@ export async function draftGrade({ ai, canvas, settings, course, assignment, sub
   const nonce = randomToken(10)
   const possible = Number(assignment.points_possible) || 0
   const { parts: content, notes } = await submissionParts(sub, { canvas, ai })
-  const history = await priorFeedback(host, userId, assignment.id, canvas.me?.id)
+  const user = sub.user || {}
+  const firstName = String(user.name || '').trim().split(/\s+/)[0]
+  // earlier feedback was written to this student and can contain their name: hide it, and
+  // put it back if the AI copies the {{NAME}} it saw into the new comment
+  const history = hideName(await priorFeedback(host, userId, assignment.id, canvas.me?.id), user.name, user.sortable_name)
+  const putName = (t) => user.name ? fillName(t, firstName) : t
 
   const header = [
     `STUDENT REF: ${nonce}`,
@@ -156,13 +161,12 @@ export async function draftGrade({ ai, canvas, settings, course, assignment, sub
     rubric = (j.rubric || []).filter(x => byId.has(String(x.criterion_id))).map(x => ({
       criterion_id: String(x.criterion_id),
       points: clampScore(x.points, byId.get(String(x.criterion_id)).points) ?? 0,
-      comment: x.comment || ''
+      comment: putName(x.comment || '')
     }))
   }
   let score = clampScore(j.score, possible)
   if (rubric.length && assignment.rubric?.length === rubric.length) score = clampScore(rubric.reduce((a, x) => a + x.points, 0), possible)
 
-  const user = sub.user || {}
   if (!userId.startsWith('anon-')) {
     await upsertStudent({ host, userId, name: user.name, sortableName: user.sortable_name, avatarUrl: user.avatar_url, courseId: course.id, courseName: course.name })
   }
@@ -172,8 +176,8 @@ export async function draftGrade({ ai, canvas, settings, course, assignment, sub
     studentName: user.name || (userId.startsWith('anon-') ? 'Anonymous student' : `Student ${userId}`),
     assignmentName: assignment.name,
     score, possible, rubric,
-    comment: String(j.comment || '').trim(),
-    privateNote: j.private_note || '',
+    comment: putName(String(j.comment || '').trim()),
+    privateNote: putName(j.private_note || ''),
     confidence: Math.max(0, Math.min(1, Number(j.confidence) || 0)),
     flags: [...new Set([...(j.flags || []), ...(sub.late ? ['late'] : [])])],
     notes,

@@ -46,8 +46,7 @@ const files = {
   'primary_category.txt': 'EDUCATION',
   'secondary_category.txt': 'PRODUCTIVITY',
   ...Object.fromEntries(Object.entries(en).map(([k, v]) => [`en-US/${k}.txt`, v])),
-  'review_information/first_name.txt': 'Waeil',
-  'review_information/last_name.txt': 'Mikhaeil',
+  // the contact name and phone come from secrets in the listing workflow (this repo is public)
   'review_information/email_address.txt': 'waeil.usa@gmail.com',
   'review_information/demo_user.txt': '',
   'review_information/demo_password.txt': '',

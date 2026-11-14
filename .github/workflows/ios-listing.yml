@@ -1,8 +1,9 @@
 # Uploads the App Store listing to App Store Connect: text from mobile/fastlane/metadata (made by
 # mobile/tools/make-fastlane-metadata.mjs) and screenshots from mobile/fastlane/screenshots.
 # Does not upload a build and does not submit for review.
-# Secrets: the four from the iOS workflow, plus REVIEW_PHONE and REVIEWER_GEMINI_KEY (a review-only
-# Gemini key). Both go only into the private App Review Information, never into the public listing.
+# Secrets: the four from the iOS workflow, plus REVIEW_CONTACT_NAME, REVIEW_PHONE and REVIEWER_GEMINI_KEY
+# (a review-only Gemini key). They go only into the private App Review Information, never into the
+# public listing, and are not kept in this public repository.
 name: iOS App Store listing
 
 on:
@@ -55,13 +56,19 @@ jobs:
       # and refuse to upload if the key is missing or the notes would pass Apple's 4,000 characters.
       - name: Fill in the App Review contact and key
         env:
+          REVIEW_CONTACT_NAME: ${{ secrets.REVIEW_CONTACT_NAME }}
           REVIEW_PHONE: ${{ secrets.REVIEW_PHONE }}
           REVIEWER_GEMINI_KEY: ${{ secrets.REVIEWER_GEMINI_KEY }}
         run: |
-          for name in REVIEW_PHONE REVIEWER_GEMINI_KEY; do
+          for name in REVIEW_CONTACT_NAME REVIEW_PHONE REVIEWER_GEMINI_KEY; do
             if [ -z "${!name}" ]; then echo "::error::Secret $name is not set (see mobile/IOS.md)"; exit 1; fi
           done
           printf '%s\n' "$REVIEW_PHONE" > fastlane/metadata/review_information/phone_number.txt
+          # "First Last" or "First Middle Last": the last word is the last name
+          contact="$(printf '%s' "$REVIEW_CONTACT_NAME" | tr -s '[:space:]' ' ' | sed 's/^ //; s/ $//')"
+          case "$contact" in *" "*) ;; *) echo "::error::REVIEW_CONTACT_NAME needs a first and a last name"; exit 1 ;; esac
+          printf '%s\n' "${contact% *}" > fastlane/metadata/review_information/first_name.txt
+          printf '%s\n' "${contact##* }" > fastlane/metadata/review_information/last_name.txt
           ruby -e '
             path = "fastlane/metadata/review_information/notes.txt"
             notes = File.read(path)
@@ -96,4 +103,6 @@ jobs:
         run: |
           rm -rf "$RUNNER_TEMP/keys"
           git checkout -- fastlane/metadata/review_information || true
-          rm -f fastlane/metadata/review_information/phone_number.txt
+          rm -f fastlane/metadata/review_information/phone_number.txt \
+            fastlane/metadata/review_information/first_name.txt \
+            fastlane/metadata/review_information/last_name.txt
