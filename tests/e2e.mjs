@@ -46,6 +46,11 @@ const FORM = `<!doctype html><html><head><title>Test form</title></head><body>
 <p id="out"></p><p id="out2"></p>
 <textarea id="reply" placeholder="Reply"></textarea>
 <p>Plants use sunlight to make food through photosynthesis. Chlorophyll absorbs light energy.</p>
+<canvas id="cv" width="300" height="100" style="display:block;background:#eee"></canvas><p id="cvout"></p>
+<script>
+  const cv = document.getElementById('cv')
+  cv.addEventListener('click', (e) => { const r = cv.getBoundingClientRect(); document.getElementById('cvout').textContent = Math.round(e.clientX - r.left) + ',' + Math.round(e.clientY - r.top) })
+</script>
 </body></html>`
 
 // main page on 127.0.0.1 embeds a page from "localhost" (another site) plus a rich-text editor iframe
@@ -372,6 +377,15 @@ try {
   await panel.evaluate(async ([tab, x, y]) => (await import('./lib/tabs.js')).clickAt(tab, x, y), [framesTab, bb.x + bb.width / 2, bb.y + bb.height / 2])
   assert.equal(await framesPage.frameLocator('#xo').locator('#fo').textContent(), 'Frame clicked: XY')
   ok('screen-coordinate clicks are passed into embedded frames')
+
+  // a coordinate click lands on that exact spot, not the middle of a big element (canvas, map, video)
+  await target.bringToFront()
+  const cvBox = await target.locator('#cv').boundingBox()
+  await panel.evaluate(async ([tab, x, y]) => (await import('./lib/tabs.js')).clickAt(tab, x, y), [formTab, cvBox.x + 250, cvBox.y + 20])
+  const [cx, cy] = String(await target.textContent('#cvout')).split(',').map(Number)
+  assert.ok(Math.abs(cx - 250) <= 1 && Math.abs(cy - 20) <= 1, `canvas click landed at ${cx},${cy}, wanted 250,20`)
+  await panel.bringToFront()
+  ok('screen-coordinate clicks hit the exact spot on a canvas')
 
   // guided course mode: Next page presses the course player's Continue (never "Submit quiz")
   await panel.goto(panelUrl(`view=study&tab=${framesTab}`))

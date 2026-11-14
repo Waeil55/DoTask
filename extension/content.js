@@ -306,8 +306,9 @@
     const r = el.getBoundingClientRect()
     return { clientX: r.left + r.width / 2, clientY: r.top + r.height / 2 }
   }
-  function fireClick(el) {
-    const opts = { bubbles: true, cancelable: true, composed: true, view: el.ownerDocument.defaultView, ...center(el), button: 0 }
+  /** `at` = {clientX, clientY} in el's own document; without it, the element's centre. */
+  function fireClick(el, at = null) {
+    const opts = { bubbles: true, cancelable: true, composed: true, view: el.ownerDocument.defaultView, ...(at || center(el)), button: 0 }
     const W = el.ownerDocument.defaultView
     el.dispatchEvent(new W.PointerEvent('pointerover', opts))
     el.dispatchEvent(new W.MouseEvent('mouseover', opts))
@@ -316,7 +317,9 @@
     if (typeof el.focus === 'function') el.focus({ preventScroll: true })
     el.dispatchEvent(new W.PointerEvent('pointerup', { ...opts, pointerId: 1, isPrimary: true }))
     el.dispatchEvent(new W.MouseEvent('mouseup', opts))
-    el.click()
+    // el.click() would report position (0, 0); a point click must carry its coordinates
+    if (at) el.dispatchEvent(new W.MouseEvent('click', { ...opts, detail: 1 }))
+    else el.click()
   }
   function setNativeValue(el, value) {
     const W = el.ownerDocument.defaultView || window
@@ -369,15 +372,19 @@
     const after = target ? target.scrollTop : scrollY
     return { ...scrollInfo(), moved: Math.round(after - before) }
   }
-  function elementAtPoint(x, y) {
+  function elementAtPoint(x, y) { return pointIn(x, y).el }
+  /** The element at a viewport point, looking into same-origin frames and shadow roots;
+   *  x/y come back in that element's own document. */
+  function pointIn(x, y) {
     let doc = document, el = doc.elementFromPoint(x, y)
     let ox = 0, oy = 0
     while (el && (el.tagName === 'IFRAME' || el.tagName === 'FRAME')) {
       try {
         const r = el.getBoundingClientRect()
+        const inner = el.contentDocument // null for another site's frame
+        if (!inner) break
         ox += r.left; oy += r.top
-        doc = el.contentDocument
-        if (!doc) break
+        doc = inner
         el = doc.elementFromPoint(x - ox, y - oy)
       } catch { break }
     }
@@ -386,7 +393,7 @@
       if (!inner || inner === el) break
       el = inner
     }
-    return el
+    return { el, x: x - ox, y: y - oy }
   }
 
   async function act(a) {
@@ -400,14 +407,17 @@
         el.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'instant' })
         highlight(el); fireClick(el); break
       case 'click_xy': {
-        el = elementAtPoint(a.x, a.y)
+        const p = pointIn(a.x, a.y)
+        el = p.el
         if (!el) throw new Error('Nothing clickable at that point')
         if (el.tagName === 'IFRAME' || el.tagName === 'FRAME') {
           // another site's frame: hand the click to the script running inside it
           const r = el.getBoundingClientRect()
-          return { ok: true, forward: { src: el.src, x: a.x - r.left, y: a.y - r.top } }
+          return { ok: true, forward: { src: el.src, x: p.x - r.left, y: p.y - r.top } }
         }
-        highlight(el); fireClick(el); break
+        // click the exact point, not the element's centre: on a canvas, map or video the
+        // target is one spot inside a big element
+        highlight(el); fireClick(el, { clientX: p.x, clientY: p.y }); break
       }
       case 'type':
         el.scrollIntoView({ block: 'center', behavior: 'instant' })
