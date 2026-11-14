@@ -21,3 +21,6 @@ keystore.properties
 .firebase/
 .wf-tmp/
 .env.*
+
+# Claude Code personal settings
+.claude/settings.local.json
