@@ -1,0 +1,38 @@
+DoTask is an AI assistant for teachers and adult learners. It drafts grades and feedback for you to review, tutors you by voice, and helps you write. It uses Google Gemini with your own API key, which you can get free from Google AI Studio. There is no DoTask account, no subscription and no DoTask server.
+
+TEACH
+Works with Canvas LMS. Sign in to your school's Canvas through your browser, or explore the fictional Demo School with sample data first.
+• Grading drafts: DoTask suggests rubric scores and feedback for a submission, following your rubric and your notes.
+• You stay in charge: you review and edit each draft, then post it yourself, one student at a time. Nothing posts until you press the button with that student's name.
+• Per-student history: each student's grades and comments are kept on your device and are never mixed between students.
+• Grading prompts leave out student names.
+• Drafts replies to submission comments, Inbox messages and discussions, and drafts announcements for your courses.
+
+STUDY
+• Take a photo of a page, upload a file (PDF, Word, text or images) or paste text.
+• Ask for an explanation, a summary, a quiz, flashcards or a study plan.
+• Live voice tutor: talk naturally, the way you would with a person. Turn on "Show my camera" and the tutor can see what your camera shows.
+• The tutor explains and quizzes you so you learn the material yourself. It does not complete graded quizzes or exams for you.
+
+WRITE
+• Draft replies in any tone and any language.
+• Translate and polish your own writing.
+• Copy it, share it, or save it as a Word document.
+
+YOUR KEY, YOUR DATA
+• Uses Google Gemini with your own API key. A free key from Google AI Studio is enough to start. You can also connect an OpenAI-compatible provider you choose.
+• Settings shows your usage and an estimated cost.
+• Your settings, student history and drafts are stored only on your device. Your API key and Canvas sign-in are kept in the Keychain.
+• DoTask asks your permission before it sends anything to the AI. Content is sent only when you use a feature, straight from your device to Google (or the provider you set up) and to your school's Canvas, over encrypted connections.
+• No ads, no analytics, no tracking. The developer receives none of your data.
+• Back up through the share sheet, or delete your data in Settings.
+
+GOOD TO KNOW
+• On a free-tier Gemini key, Google may use what you send to improve its products, and people may review it. For student records, use a paid-tier key with billing turned on; a whole class usually costs a few cents. In the EEA, the UK and Switzerland, Google's terms require a paid-tier key.
+• Use DoTask as your school's policies allow, including FERPA and other student-privacy rules.
+• AI output is always a draft. Check it before you post or share it.
+• DoTask is for adults 18 and over.
+• Connecting a real Canvas needs a developer key that your school's Canvas administrator creates once. Our support page has the settings to send them.
+• The microphone and camera are used only after you tap to start the voice tutor or take a photo. Everything else works without them.
+
+DoTask is an independent app. It is not affiliated with or endorsed by Instructure (Canvas) or Google.

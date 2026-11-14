@@ -357,8 +357,10 @@ export function mount(root, ctx) {
     return { error: 'unknown tool' }
   }
 
+  let frameGen = 0 // bumped by stopFrames(), so a start that was overtaken quits instead of showing a stale preview
   async function startFrames() {
     stopFrames()
+    const gen = frameGen
     let lastSig = ''
     let grab
     if (platform.pages) {
@@ -370,15 +372,19 @@ export function mount(root, ctx) {
     } else {
       // phones: the tutor sees what the back camera sees, with a preview so the learner knows
       try {
-        camVideo = await platform.camera.start()
+        const video = await platform.camera.start()
+        if (gen !== frameGen || !video) return // stopped or restarted while the camera was opening
+        camVideo = video
         camHolder?.append(camVideo)
       } catch {
+        if (gen !== frameGen) return
         st.seeScreen = false
         if (st.live) renderVoice()
         return platform.openPermissionPage()
       }
       grab = () => platform.camera.frame({ maxWidth: 960, quality: 0.5 })
     }
+    if (gen !== frameGen) return
     st.frameTimer = setInterval(async () => {
       if (!st.live) return stopFrames()
       try {
@@ -392,6 +398,7 @@ export function mount(root, ctx) {
     }, 1500)
   }
   function stopFrames() {
+    frameGen++
     clearInterval(st.frameTimer); st.frameTimer = null
     if (platform.camera?.on) { platform.camera.stop(); camVideo = null }
   }

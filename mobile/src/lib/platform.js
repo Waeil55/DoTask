@@ -15,20 +15,31 @@ globalThis.DOTASK_VERSION = VERSION
 function createCamera() {
   let stream = null
   let video = null
+  let starting = null // the start in progress, so two quick starts share one camera
+  let gen = 0 // bumped by stop(), so a start that was stopped midway lets go of its camera
   return {
-    get on() { return !!stream },
-    /** Starts the back camera and returns a muted <video> preview element. */
-    async start() {
-      if (stream) return video
-      stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 960 } },
-        audio: false
-      })
-      video = Object.assign(document.createElement('video'), { muted: true, playsInline: true, autoplay: true, className: 'camera-preview' })
-      video.setAttribute('playsinline', '')
-      video.srcObject = stream
-      await video.play().catch(() => {})
-      return video
+    get on() { return !!stream || !!starting },
+    /** Starts the back camera and returns a muted <video> preview element (null if stopped meanwhile). */
+    start() {
+      if (video) return Promise.resolve(video)
+      if (starting) return starting
+      const my = ++gen
+      const run = (async () => {
+        const s = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 960 } },
+          audio: false
+        })
+        if (my !== gen) { s.getTracks().forEach(t => t.stop()); return null } // stopped while asking
+        stream = s
+        video = Object.assign(document.createElement('video'), { muted: true, playsInline: true, autoplay: true, className: 'camera-preview' })
+        video.setAttribute('playsinline', '')
+        video.srcObject = s
+        await video.play().catch(() => {})
+        return my === gen ? video : null
+      })()
+      starting = run
+      run.then(() => {}, () => {}).finally(() => { if (starting === run) starting = null })
+      return run
     },
     /** One JPEG frame, scaled down to save AI tokens. */
     async frame({ maxWidth = 960, quality = 0.5 } = {}) {
@@ -42,6 +53,8 @@ function createCamera() {
       return { data, mimeType: 'image/jpeg', width: w, height: h }
     },
     stop() {
+      gen++
+      starting = null
       stream?.getTracks().forEach(t => t.stop())
       if (video) { video.srcObject = null; video.remove() }
       stream = null

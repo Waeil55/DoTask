@@ -5,7 +5,7 @@
 // with the camera, writing, and that nothing overflows sideways.
 //   cd mobile && node build.mjs && node tests/mobile-e2e.mjs
 //   BROWSER=msedge       use Edge (when Windows blocks Playwright's Chromium)
-//   SHOTS=1              also save store screenshots (App Store 6.9" and Google Play phone)
+//   SHOTS=1              also save store screenshots (App Store 6.9" into fastlane/screenshots, Google Play phone into store/screenshots)
 //   HEADED=1             watch it run
 
 import http from 'node:http'
@@ -18,6 +18,7 @@ import { chromium } from 'playwright'
 const here = path.dirname(fileURLToPath(import.meta.url))
 const WWW = path.resolve(here, '../www')
 const STORE = path.resolve(here, '../store/screenshots')
+const FASTLANE = path.resolve(here, '../fastlane/screenshots/en-US') // what the App Store listing workflow uploads
 if (!fs.existsSync(path.join(WWW, 'index.html'))) { console.error('Build first: node build.mjs'); process.exit(2) }
 
 // ---------------- static server for www ----------------
@@ -62,7 +63,9 @@ try {
   browser = await chromium.launch({
     channel: process.env.BROWSER || 'chromium',
     headless: !process.env.HEADED,
-    args: ['--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream', '--autoplay-policy=no-user-gesture-required']
+    // the fake camera shows a worksheet page on a desk (tests/fixtures/camera-page.mjpeg), not the test pattern
+    args: ['--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream', '--autoplay-policy=no-user-gesture-required',
+      `--use-file-for-fake-video-capture=${path.join(here, 'fixtures', 'camera-page.mjpeg')}`]
   })
 } catch (e) {
   console.error(`Could not start the test browser: ${e.message.split('\n')[0]}\nTry BROWSER=msedge.`)
@@ -131,11 +134,14 @@ const shot = async (page, dir, name) => {
   if (!dir) return
   fs.mkdirSync(dir, { recursive: true })
   await page.waitForTimeout(400)
+  // hide passing toasts so they don't cover the screen in store screenshots
+  await page.evaluate(() => { const t = document.getElementById('toasts'); if (t) t.style.visibility = 'hidden' })
   await page.screenshot({ path: path.join(dir, `${name}.png`) })
+  await page.evaluate(() => { const t = document.getElementById('toasts'); if (t) t.style.visibility = '' })
 }
 
 /** The whole user journey. `shots` = folder for store screenshots (or null). */
-async function journey({ size, shots = null, label }) {
+async function journey({ size, shots = null, prefix = '', label }) {
   const { context, page, errors } = await newPhone(size)
   const step = (name) => label ? ok(`${label}: ${name}`) : ok(name)
   try {
@@ -195,7 +201,7 @@ async function journey({ size, shots = null, label }) {
     await page.locator('#view-teach .item', { hasText: /Draft \d+\/20/ }).first().click()
     const postBtn = page.locator('#view-teach button', { hasText: /✓ Post to / })
     await postBtn.waitFor()
-    await shot(page, shots, '1-grading-review')
+    await shot(page, shots, prefix + '1-grading-review')
     const who = (await postBtn.innerText()).replace(/.*Post to /, '').trim()
     await postBtn.click()
     // the app confirms with a toast and moves on to the next student
@@ -208,7 +214,7 @@ async function journey({ size, shots = null, label }) {
     await page.locator('#view-teach .seg button', { hasText: 'Students' }).click()
     await page.locator('#view-teach .item', { hasText: who }).first().click()
     await page.locator('#view-teach').getByText(/photosynthesis/i).first().waitFor()
-    await shot(page, shots, '2-student-history')
+    await shot(page, shots, prefix + '2-student-history')
     await noSideways(page, 'Student history')
     step('student history shows the posted work')
 
@@ -221,7 +227,7 @@ async function journey({ size, shots = null, label }) {
     await page.locator('dialog[open] button', { hasText: 'Study this' }).click()
     await page.locator('#view-study button', { hasText: 'Explain it' }).click()
     await page.locator('#view-study .msg.ai', { hasText: 'Quick check' }).waitFor()
-    await shot(page, shots, '3-study-tutor')
+    await shot(page, shots, prefix + '3-study-tutor')
     step('study: pasted notes, streamed explanation')
 
     const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64')
@@ -245,7 +251,10 @@ async function journey({ size, shots = null, label }) {
     for (let i = 0; i < 40 && live.images <= before; i++) await page.waitForTimeout(250)
     assert.ok(live.setups >= 1, 'voice session started')
     assert.ok(live.images > before, 'camera pictures reach the tutor while "Show my camera" is on')
-    await shot(page, shots, '4-voice-tutor')
+    assert.equal(await page.locator('#view-study video.camera-preview').count(), 1, 'one camera preview')
+    const studyText = await page.locator('#view-study').innerText()
+    assert.ok(!/(null|undefined|NaN)/.test(studyText), `stray value on the Study screen: ${studyText.match(/.{0,40}(null|undefined|NaN).{0,20}/)?.[0]}`)
+    await shot(page, shots, prefix + '4-voice-tutor')
     await page.locator('#view-study button', { hasText: /Stop|End/ }).first().click()
     await page.waitForFunction(() => !document.querySelector('#view-study video.camera-preview'), null, { timeout: 10000 })
     step('voice tutor sees through the camera, and the camera turns off when it ends')
@@ -257,7 +266,7 @@ async function journey({ size, shots = null, label }) {
     await page.locator('#view-write textarea').first().fill('Hi Ms. Rivera, I have been sick this week. Could I get a few extra days for the lab report? Thanks, Jordan')
     await page.locator('#view-write button', { hasText: 'Write it' }).click()
     await page.waitForFunction(() => [...document.querySelectorAll('#view-write textarea')].some(t => /three-day extension/.test(t.value)))
-    await shot(page, shots, '5-write-reply')
+    await shot(page, shots, prefix + '5-write-reply')
     await noSideways(page, 'Write')
     step('write: drafts a reply; Share replaces "Insert into page"')
 
@@ -276,7 +285,7 @@ try {
   await journey({ size: { width: 390, height: 844, scale: 2 } })
   if (process.env.SHOTS) {
     console.log('\nStore screenshots')
-    await journey({ size: { width: 440, height: 956, scale: 3 }, shots: path.join(STORE, 'ios-6.9'), label: 'App Store 1320x2868' })
+    await journey({ size: { width: 440, height: 956, scale: 3 }, shots: FASTLANE, prefix: 'iPhone69-', label: 'App Store 1320x2868' })
     await journey({ size: { width: 360, height: 640, scale: 3 }, shots: path.join(STORE, 'play-phone'), label: 'Google Play 1080x1920' })
   }
 } catch (e) {

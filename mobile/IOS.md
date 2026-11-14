@@ -48,6 +48,18 @@ Repository, Settings, Secrets and variables, Actions, New repository secret:
 | `ASC_ISSUER_ID` | Issuer ID from the same page |
 | `ASC_KEY_P8` | base64 of the `.p8` file (the workflow also accepts the raw file text) |
 | `APPLE_TEAM_ID` | Team ID |
+| `REVIEW_PHONE` | Phone number App Review may call, with country code (listing workflow only) |
+| `REVIEWER_GEMINI_KEY` | A review-only Gemini key (listing workflow only; see "App Review Information" in `store/app-store.md`) |
+
+The last two go only into the private App Review Information, never into the public listing. With the GitHub CLI
+(each command asks for the value, so nothing lands in your shell history):
+
+    gh secret set ASC_KEY_ID -R Waeil55/DoTask
+    gh secret set ASC_ISSUER_ID -R Waeil55/DoTask
+    gh secret set APPLE_TEAM_ID -R Waeil55/DoTask
+    gh secret set REVIEW_PHONE -R Waeil55/DoTask
+    gh secret set REVIEWER_GEMINI_KEY -R Waeil55/DoTask
+    Get-Content "$HOME\Downloads\AuthKey_XXXXXXXXXX.p8" -Raw | gh secret set ASC_KEY_P8 -R Waeil55/DoTask
 
 Base64 on Windows (PowerShell), copied straight to the clipboard:
 
@@ -90,12 +102,21 @@ Device checklist (iPhone on iOS 16.4 or later; a small screen like an SE helps i
 
 ## 6. Store listing and submission
 
-All texts and answers are in `store/app-store.md`:
+All texts and answers are in `store/app-store.md`. The text and screenshots upload by workflow:
+
+- `node tools/make-fastlane-metadata.mjs` turns `store/app-store.md` and `store/review-notes.txt` into
+  `fastlane/metadata` (it checks Apple's length limits). Run it after editing either file, then commit.
+- `node build.mjs && SHOTS=1 BROWSER=msedge node tests/mobile-e2e.mjs` retakes the screenshots
+  (Demo School data only) into `fastlane/screenshots/en-US`.
+- Actions, **iOS App Store listing**, Run workflow: uploads both to version 2.1.0, fills in the review
+  phone and key from secrets, and does not submit.
+
+The rest is entered on the App Store Connect website:
 
 1. App Privacy: enter the answers from `app-store.md` (must match `PrivacyInfo.xcprivacy`) and the privacy policy URL.
 2. Age rating: answer the questionnaire, ending at **18+**.
-3. Screenshots: iPhone 6.9-inch (1320 x 2868 portrait). No iPad screenshots: the app is iPhone only.
-4. App Review Information: notes from `store/review-notes.txt` with a review-only Gemini key.
+3. Screenshots (uploaded by the listing workflow): iPhone 6.9-inch (1320 x 2868 portrait). No iPad screenshots: the app is iPhone only.
+4. App Review Information (uploaded by the listing workflow): untick "Sign-in required".
 5. Pricing and Availability: an iPhone-only app is also offered on Apple silicon Macs and Apple Vision Pro
    by default. Untick those unless you have tested there (mic, camera and Canvas sign-in differ).
    App Review may still open the iPhone app on an iPad (compatibility mode), so give it a quick try on one if you can.

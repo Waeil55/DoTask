@@ -183,8 +183,9 @@ No account.").
 
 - Sign-in required: **No** (untick "Sign-in required"; there is no DoTask account). Request approval of Demo School in the notes instead.
 - Contact: owner's name, phone, and `waeil.usa@gmail.com`.
-- Notes: paste `mobile/store/review-notes.txt` (3,919 characters with placeholders; limit 4,000), after replacing
-  `{{REVIEWER_GEMINI_KEY}}` with a review-only key (a 39-character key adds 16). If the total goes over 4,000, shorten the AGE paragraph first.
+- Notes: paste `mobile/store/review-notes.txt` (3,951 characters as saved, contact address included; limit 4,000),
+  after replacing `{{REVIEWER_GEMINI_KEY}}` with a review-only key (a 39-character key makes it 3,967). If the total
+  goes over 4,000, shorten the AGE paragraph first.
 - Reviewer key: create it in a separate Google Cloud project, restrict it to the Generative Language API, set a low
   daily request quota on that project, and delete the key once the app is approved. Never put a key in the public
   listing, in a screenshot, or in this repository.
