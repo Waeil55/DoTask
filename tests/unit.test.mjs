@@ -2,7 +2,7 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { deflateSync } from 'node:zlib'
 
-import { parseJsonLoose, htmlToText, textToHtml, parseLinkHeader, assessRisk, isBlockedHost, clampScore, truncate } from '../extension/lib/util.js'
+import { parseJsonLoose, htmlToText, textToHtml, parseLinkHeader, assessRisk, isBlockedHost, clampScore, truncate, shorten } from '../extension/lib/util.js'
 import { readZip, fileToAiPart, pdfText } from '../extension/lib/files.js'
 import { textToDocx, writeZip } from '../extension/lib/docx.js'
 import { AIClient, toGeminiSchema, AIError } from '../extension/lib/ai.js'
@@ -96,6 +96,10 @@ test('clampScore keeps scores in range', () => {
   assert.equal(clampScore('7.5', 10), 7.5)
   assert.equal(clampScore('abc', 10), null)
   assert.match(truncate('abcdef', 3), /^abc…/)
+  // shorten() is for the screen: whole words, a plain "…", no AI-facing "[N more chars]"
+  assert.equal(shorten('Photosynthesis happens in chloroplasts. Chlorophyll absorbs light', 40), 'Photosynthesis happens in chloroplasts…')
+  assert.equal(shorten('  short   text ', 40), 'short text')
+  assert.equal(shorten('abcdefghijklmnop', 5), 'abcde…')
 })
 
 // ---------------- files ----------------
@@ -335,4 +339,13 @@ test('tutor sends PDFs natively to Gemini and text to other providers', () => {
   const doc = { name: 'Bio', inline: { mimeType: 'application/pdf', data: 'X' }, text: 'cells' }
   assert.equal(materialParts(doc, true)[1].inline.mimeType, 'application/pdf')
   assert.equal(materialParts(doc, false)[1].text, 'cells')
+})
+
+test('reply drafts get the name filled in on the device', async () => {
+  const { fillName } = await import('../extension/lib/compose.js')
+  assert.equal(fillName('Hi {{NAME}}, yes you can.', 'Sam'), 'Hi Sam, yes you can.')
+  assert.equal(fillName("Hi [Student Name], ok. Thanks [student's first name]!", 'Sam'), 'Hi Sam, ok. Thanks Sam!')
+  assert.equal(fillName('Hi [Name],', 'Sam'), 'Hi Sam,')
+  assert.equal(fillName('See [Link] and [Assignment]', 'Sam'), 'See [Link] and [Assignment]')
+  assert.equal(fillName('Hi {{NAME}}', ''), 'Hi {{NAME}}')
 })

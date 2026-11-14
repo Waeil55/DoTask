@@ -7,7 +7,7 @@ import { SentenceSpeaker, speak, stopSpeaking, BasicVoice, speechRecognitionAvai
 import { fileToAiPart } from '../lib/files.js'
 import * as tabs from '../lib/tabs.js'
 import { h, md, composer, toast, spinner, replace, promptDialog, openMicPermission, select } from '../lib/ui.js'
-import { truncate, isAbort, fmtDate, sleep, fnv1a } from '../lib/util.js'
+import { truncate, shorten, isAbort, fmtDate, sleep, fnv1a } from '../lib/util.js'
 import { getFolders, addFolder, unlockFolders, listFiles, readFile, filesSupported } from '../lib/localfiles.js'
 import { platform } from '../lib/platform.js'
 
@@ -34,7 +34,7 @@ export function mount(root, ctx) {
   const setupHolder = h('div')
   const scroller = h('div', { class: 'scroll' }, setupHolder, sourceBox, h('div', { style: { height: '10px' } }), voiceBox, h('div', { class: 'section-title' }, 'Study modes'), modes, log)
   const speakToggle = h('button', { class: 'icon-btn', title: 'Speak answers aloud', onclick: () => { st.speakAnswers = !st.speakAnswers; speakToggle.classList.toggle('primary', st.speakAnswers); if (!st.speakAnswers) stopSpeaking() } }, '🔈')
-  const box = composer({ placeholder: 'Ask your tutor anything…', onSubmit: (t) => ask(t), extra: [speakToggle] })
+  const box = composer({ placeholder: platform.phone ? 'Ask your tutor…' : 'Ask your tutor anything…', onSubmit: (t) => ask(t), extra: [speakToggle] })
   root.append(scroller, h('div', { class: 'composer-wrap' }, box.el))
   const fileInput = h('input', { type: 'file', class: 'hidden', accept: '.pdf,.docx,.pptx,.xlsx,.txt,.md,.csv,.html,.htm,image/*' })
   fileInput.addEventListener('change', () => { if (fileInput.files[0]) useFile(fileInput.files[0]); fileInput.value = '' })
@@ -76,7 +76,7 @@ export function mount(root, ctx) {
     st.doc = doc
     st.history = []
     renderSource()
-    note(`📚 Now studying **${doc.name}**. Pick a study mode or ask me anything.`)
+    note(`📚 Now studying **${shorten(doc.name, 80)}** — pick a study mode or ask me anything.`)
   }
 
   async function usePage() {
@@ -121,7 +121,7 @@ export function mount(root, ctx) {
     renderSource()
     note(same
       ? `I pressed **${r.label}**, but the page looks the same. It may need you to finish something on it first.`
-      : `➡️ Pressed **${r.label}**. Now studying **${truncate(doc.name, 80)}**. Pick a study mode or ask me anything.`)
+      : `➡️ Pressed **${r.label}**. Now studying **${shorten(doc.name, 80)}** — pick a study mode or ask me anything.`)
     return { moved: !same, pressed: r.label, title: doc.name, text: truncate(page.text || '', 6000) }
   }
 
@@ -182,7 +182,7 @@ export function mount(root, ctx) {
 
   async function usePaste() {
     const text = await promptDialog({ title: 'Paste what you want to study', placeholder: 'Notes, a chapter, an article…', multiline: true, ok: 'Study this' })
-    if (text && text.trim()) setDoc(await saveDoc({ name: truncate(text.trim().split('\n')[0], 50) || 'Pasted text', kind: 'text', text }))
+    if (text && text.trim()) setDoc(await saveDoc({ name: shorten(text.trim().split('\n')[0], 40) || 'Pasted text', kind: 'text', text }))
   }
 
   // ---------------- chat ----------------
@@ -440,7 +440,7 @@ export function mount(root, ctx) {
     onShow: async (p) => {
       replace(setupHolder, ctx.setupCard() || '')
       if (p?.usePage && platform.pages) usePage()
-      if (p?.explain) { setDoc(await saveDoc({ name: truncate(p.explain, 50), kind: 'text', text: p.explain })); ask('Explain this to me clearly, with an example.', 'Explain this') }
+      if (p?.explain) { setDoc(await saveDoc({ name: shorten(p.explain, 40), kind: 'text', text: p.explain })); ask('Explain this to me clearly, with an example.', 'Explain this') }
       if (p?.read) speak(p.read, { language: ctx.settings.language, rate: ctx.settings.speechRate })
     },
     onSettings: () => { replace(setupHolder, ctx.setupCard() || ''); if (!st.live && !st.basic) renderVoice() }

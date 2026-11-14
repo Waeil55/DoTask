@@ -7,7 +7,7 @@ import { db, draftsForAssignment, feedbackForStudent, getStudent, setStudentNote
 import { h, md, toast, spinner, avatar, select, empty, confirmDialog, replace, field } from '../lib/ui.js'
 import { saveSettings } from '../lib/settings.js'
 import { platform } from '../lib/platform.js'
-import { colorFor, fmtDate, htmlToText, isAbort, textToHtml, truncate, clampScore } from '../lib/util.js'
+import { colorFor, fmtDate, htmlToText, isAbort, textToHtml, truncate, shorten, clampScore } from '../lib/util.js'
 import { speak } from '../lib/speech.js'
 
 export function mount(root, ctx) {
@@ -362,7 +362,7 @@ export function mount(root, ctx) {
     const subCard = h('div', { class: 'card flat' },
       h('h4', null, 'Submission'),
       preview ? h('div', { class: 'preview' }, preview) : '',
-      sub.url ? h('p', { class: 'small' }, 'Link: ', h('a', { href: sub.url, target: '_blank' }, truncate(sub.url, 60))) : '',
+      sub.url ? h('p', { class: 'small' }, 'Link: ', h('a', { href: sub.url, target: '_blank' }, shorten(sub.url, 60))) : '',
       (sub.attachments || []).length ? h('div', { class: 'chips', style: { marginTop: '6px' } }, sub.attachments.map(f => h('a', { class: 'chip', href: f.url, target: '_blank' }, `📎 ${truncate(f.display_name, 40)}`))) : '',
       !preview && !sub.url && !(sub.attachments || []).length ? h('p', { class: 'small muted' }, sub.submission_type ? `Type: ${sub.submission_type}` : 'No submission yet.') : '',
       st.canvas.speedGraderUrl(st.course.id, a.id, sub.user_id) ? h('a', { class: 'small', href: st.canvas.speedGraderUrl(st.course.id, a.id, sub.user_id), target: '_blank' }, 'Open in SpeedGrader ↗') : '')
@@ -465,6 +465,7 @@ export function mount(root, ctx) {
         context: `Assignment: ${a.name}.${d?.comment ? `\nMy feedback on this submission: ${truncate(d.comment, 1500)}` : ''}`,
         sendLabel: `Send to ${first}`,
         intentPlaceholder: 'What do you want to tell them? (optional)',
+        recipientName: first, // filled in on the device; the AI only sees {{NAME}}
         onSend: async (text) => {
           const ok = await confirmDialog({ title: `Send this comment to ${nameOf(sub)}?`, body: truncate(text, 500), ok: `Send to ${first}` })
           if (!ok) return
@@ -659,7 +660,7 @@ export function mount(root, ctx) {
   }
 
   /** Reusable "draft with AI → edit → send" box. */
-  function replyEditor({ kind, original, context, sendLabel, onSend, intentPlaceholder }) {
+  function replyEditor({ kind, original, context, sendLabel, onSend, intentPlaceholder, recipientName }) {
     const intent = h('input', { class: 'input', placeholder: intentPlaceholder || 'What do you want to say? (optional — e.g. “yes, extend to Friday”)' })
     let tone = 'Warm'
     const out = h('textarea', { class: 'input', rows: 7, placeholder: 'Your reply…' })
@@ -674,7 +675,7 @@ export function mount(root, ctx) {
       draftBtn.disabled = true
       out.value = ''
       try {
-        await draftReply({ ai: ai(), settings: ctx.settings, kind, original, context, intent: intent.value, tone, onText: (_d, full) => { out.value = full } })
+        out.value = await draftReply({ ai: ai(), settings: ctx.settings, kind, original, context, intent: intent.value, tone, recipientName, onText: (_d, full) => { out.value = full } })
       } catch (e) { toast(e.message, 'error') }
       draftBtn.disabled = false
     } }, '✨ Draft')

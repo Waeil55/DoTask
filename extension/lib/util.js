@@ -91,6 +91,15 @@ export function truncate(s, n) {
   return s.length > n ? s.slice(0, n) + `… [${s.length - n} more chars]` : s
 }
 
+/** Short text for the screen: cut at a word boundary with "…". (truncate() is for AI prompts.) */
+export function shorten(s, n) {
+  s = String(s ?? '').replace(/\s+/g, ' ').trim()
+  if (s.length <= n) return s
+  const cut = s.slice(0, n)
+  const space = cut.lastIndexOf(' ')
+  return (space > n * 0.6 ? cut.slice(0, space) : cut).replace(/[\s,.;:!?–—-]+$/, '') + '…'
+}
+
 export function fnv1a(str) {
   let h = 0x811c9dc5
   for (let i = 0; i < str.length; i++) {

@@ -6,7 +6,7 @@ import { saveSettings } from '../lib/settings.js'
 import * as tabs from '../lib/tabs.js'
 import { h, md, composer, toast, spinner } from '../lib/ui.js'
 import { speak, stopSpeaking } from '../lib/speech.js'
-import { isAbort, truncate } from '../lib/util.js'
+import { isAbort, shorten } from '../lib/util.js'
 import { unlockFolders, getFolders } from '../lib/localfiles.js'
 
 const MODES = [
@@ -212,7 +212,7 @@ export function mount(root, ctx) {
     const m = aiMsg(`🔊 Reading **${page.title || 'this page'}**… (press Stop to stop)`)
     stopBtn.classList.remove('hidden')
     const sp = speak(page.text, { language: ctx.settings.language, rate: ctx.settings.speechRate })
-    sp.onEnd = () => { if (!run) stopBtn.classList.add('hidden'); m.set(`Finished reading **${truncate(page.title, 60)}**.`) }
+    sp.onEnd = () => { if (!run) stopBtn.classList.add('hidden'); m.set(`Finished reading **${shorten(page.title, 60)}**.`) }
   }
 
   renderModes()
