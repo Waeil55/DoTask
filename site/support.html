@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DoTask help and support</title>
+<meta name="description" content="Get started with DoTask, connect your school's Canvas (with settings for Canvas administrators), fix microphone, camera, sign-in and key problems, and delete your data.">
+<link rel="icon" href="/icon-48.png">
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<!-- OWNER, before deploying: replace every waeil.usa@gmail.com with the real address.
+     The Canvas scope list below was taken from the Canvas API calls in extension/lib/canvas.js and
+     extension/views/teach.js (DoTask 2.1);
+     update it whenever DoTask starts calling a new Canvas endpoint. -->
+
+<header class="brand"><a class="home" href="/"><img src="/icon-48.png" alt="" width="32" height="32"><span>DoTask</span></a></header>
+
+<main class="doc">
+  <section>
+    <h1>Help and support</h1>
+    <p class="fine">For the DoTask app on iPhone and Android. Questions: <a href="mailto:waeil.usa@gmail.com">waeil.usa@gmail.com</a>.</p>
+  </section>
+
+  <section class="install" id="start">
+    <h2>Getting started</h2>
+    <ol>
+      <li><b>Get a free AI key.</b> Go to <a href="https://aistudio.google.com/apikey" rel="noopener">aistudio.google.com/apikey</a>, sign in with a Google account, choose Create API key, and copy the key.</li>
+      <li><b>Allow AI use.</b> Open DoTask and choose I teach or I'm a student. Read what DoTask sends to Google Gemini, then tap Allow and continue.</li>
+      <li><b>Paste your key.</b> In Settings, paste the key and tap Test connection.</li>
+      <li><b>Try Demo School.</b> In Teach, tap Try Demo School to explore a fictional school with sample students before you connect a real class.</li>
+    </ol>
+  </section>
+
+  <section id="paid">
+    <h2>Free key or paid key?</h2>
+    <p>A free key is fine for trying DoTask and for your own study material. On the free tier, Google may use what you send to improve its products and people may review it, so Google asks you not to send personal information. For real student work, turn on billing for the key's project in Google AI Studio so it becomes a paid-tier key. Grading a whole class usually costs a few cents, and Settings shows your usage and an estimated cost. In the EEA, the UK and Switzerland, Google's terms require a paid-tier key.</p>
+  </section>
+
+  <section id="canvas">
+    <h2>Connecting your school's Canvas</h2>
+    <p>DoTask signs in to Canvas through your phone's browser, so it never sees your Canvas password. Your school's Canvas administrator creates a developer key for DoTask once, and then every teacher at the school can connect. Send them the next section.</p>
+    <p>Then, in DoTask, open Teach, enter your school's Canvas address (the one you use in a browser, such as yourschool.instructure.com) and the Client ID your administrator gives you, and tap Sign in with Canvas. Sign in on the Canvas page that opens and tap Authorize. DoTask can only do what your own Canvas role allows.</p>
+    <p>Use DoTask with real classes only as your school's policies allow, including FERPA.</p>
+  </section>
+
+  <section id="admins">
+    <span class="note" aria-hidden="true">send this to your admin</span>
+    <h2>For Canvas administrators</h2>
+    <p>In Canvas, go to Admin, choose your account, then Developer Keys. Choose + Developer Key, then + API Key, and use these settings:</p>
+    <ul>
+      <li><b>Key Name</b>: DoTask</li>
+      <li><b>Owner Email</b>: your email address</li>
+      <li><b>Redirect URIs</b>: <code>com.agapecare.dotask:/oauth/canvas</code> (exactly this, on its own line)</li>
+      <li><b>Client Type</b>: Public, if your Canvas offers this option. DoTask signs in with PKCE, so phones never need to hold a client secret. If your Canvas has no Client Type option, give teachers the key's client secret too (choose Show Key); they enter it under "Client secret" in DoTask, which keeps it in the phone's Keychain or Keystore.</li>
+      <!-- Why "off": mobile/src/lib/canvas-oauth.js sends no scope parameter, and Canvas answers invalid_scope
+           when a key enforces scopes and the sign-in request names none (Canvas OAuth docs, "scope").
+           If the app starts sending scope=<the list below>, offer the scoped option again here, together
+           with "Allow Include Parameters" (DoTask asks for include[]=user, submission_comments, rubric_assessment). -->
+      <li><b>Enforce Scopes</b>: off. This version of DoTask does not ask Canvas for individual scopes when a teacher signs in, and Canvas turns such a sign-in down when the key enforces scopes. DoTask still acts only with each teacher's own Canvas permissions.</li>
+    </ul>
+    <p>Save the key, switch its <b>State</b> to <b>On</b>, and give teachers the <b>Client ID</b> (the number in the Details column). DoTask acts only with each teacher's own Canvas permissions. Teachers can remove its access at any time under Account, Settings, Approved Integrations, and you can switch the key off to end access for everyone.</p>
+    <details>
+      <summary>Every Canvas API call DoTask makes (as Canvas scope names, for your review)</summary>
+      <ul class="scopes">
+        <li><code>url:GET|/api/v1/users/:id</code></li>
+        <li><code>url:GET|/api/v1/courses</code></li>
+        <li><code>url:GET|/api/v1/courses/:course_id/users</code></li>
+        <li><code>url:GET|/api/v1/courses/:course_id/assignments</code></li>
+        <li><code>url:GET|/api/v1/courses/:course_id/assignments/:id</code></li>
+        <li><code>url:GET|/api/v1/courses/:course_id/assignments/:assignment_id/submissions</code></li>
+        <li><code>url:GET|/api/v1/courses/:course_id/assignments/:assignment_id/submissions/:user_id</code></li>
+        <li><code>url:GET|/api/v1/courses/:course_id/students/submissions</code></li>
+        <li><code>url:PUT|/api/v1/courses/:course_id/assignments/:assignment_id/submissions/:user_id</code></li>
+        <li><code>url:PUT|/api/v1/courses/:course_id/assignments/:assignment_id/anonymous_submissions/:anonymous_id</code></li>
+        <li><code>url:GET|/api/v1/courses/:course_id/discussion_topics</code></li>
+        <li><code>url:GET|/api/v1/courses/:course_id/discussion_topics/:topic_id</code></li>
+        <li><code>url:GET|/api/v1/courses/:course_id/discussion_topics/:topic_id/view</code></li>
+        <li><code>url:POST|/api/v1/courses/:course_id/discussion_topics</code></li>
+        <li><code>url:POST|/api/v1/courses/:course_id/discussion_topics/:topic_id/entries</code></li>
+        <li><code>url:POST|/api/v1/courses/:course_id/discussion_topics/:topic_id/entries/:entry_id/replies</code></li>
+        <li><code>url:GET|/api/v1/announcements</code></li>
+        <li><code>url:GET|/api/v1/conversations</code></li>
+        <li><code>url:GET|/api/v1/conversations/:id</code></li>
+        <li><code>url:PUT|/api/v1/conversations/:id</code></li>
+        <li><code>url:POST|/api/v1/conversations/:id/add_message</code></li>
+      </ul>
+      <p>DoTask calls no other Canvas endpoints. If your school requires scoped developer keys, write to us and tell us.</p>
+    </details>
+  </section>
+
+  <section id="trouble">
+    <h2>Troubleshooting</h2>
+
+    <h3>The voice tutor cannot hear me</h3>
+    <p>The voice tutor needs microphone permission. On iPhone, open Settings, then DoTask, and turn on Microphone. On Android, open Settings, then Apps, DoTask, Permissions, Microphone, and choose Allow only while using the app. Then start the tutor again.</p>
+
+    <h3>The camera does not work</h3>
+    <p>Taking a photo of a page and "Show my camera" need camera permission. Turn on Camera in the same place as the microphone. Everything else in DoTask works without it.</p>
+
+    <h3>"Canvas did not accept the sign-in"</h3>
+    <ul>
+      <li>Check the Canvas address. Use the address of your Canvas in a browser, such as yourschool.instructure.com, not your school's home page.</li>
+      <li>Check the Client ID with your administrator, and check that the developer key's State is On.</li>
+      <li>The key's Redirect URIs must contain exactly <code>com.agapecare.dotask:/oauth/canvas</code>.</li>
+      <li>If the message mentions invalid_scope, the developer key has Enforce Scopes switched on. Ask your administrator to switch it off for this key.</li>
+      <li>Sign in again. Canvas sign-ins can expire, or be removed under Approved Integrations.</li>
+    </ul>
+
+    <h3>Key errors and limits</h3>
+    <ul>
+      <li><b>"API key not valid"</b>: copy the whole key again from Google AI Studio, with no spaces, and tap Test connection. If you restricted the key in Google Cloud, it must allow the Generative Language API.</li>
+      <li><b>"Quota exceeded" or "Resource exhausted"</b>: the free tier has limits per minute and per day. Wait a minute, try again the next day, or turn on billing for a paid-tier key with higher limits.</li>
+      <li><b>Region or tier not allowed</b>: you may need a paid-tier key. In the EEA, the UK and Switzerland, Google's terms require one.</li>
+    </ul>
+
+    <h3>An answer looks wrong</h3>
+    <p>AI makes mistakes. Everything DoTask writes is a draft, so check grades, feedback and facts before you post or share them.</p>
+  </section>
+
+  <section id="delete">
+    <h2>Delete your data</h2>
+    <ul>
+      <li><b>In the app</b>: open Settings, tap Delete all, and type DELETE to confirm. This erases student history, drafts, study files and the activity log from this device and cannot be undone, so tap Back up first if you want a copy.</li>
+      <li><b>Your key and Canvas sign-in</b>: Delete all keeps these, so clear the API key field in Settings and choose Sign out of Canvas. Do this before you uninstall: on iPhone, iOS can keep Keychain items after an app is deleted.</li>
+      <li><b>Elsewhere</b>: delete any backup files you saved, delete your API key in Google AI Studio if you no longer need it, and remove DoTask under Approved Integrations in Canvas.</li>
+    </ul>
+    <p>We hold no copy of your data, so there is nothing to delete on our side. The <a href="/privacy.html">privacy policy</a> has the details.</p>
+  </section>
+
+  <section id="contact">
+    <h2>Contact</h2>
+    <p>Email <a href="mailto:waeil.usa@gmail.com">waeil.usa@gmail.com</a> with your phone model, the DoTask version and what happened. Please never send student information, API keys or passwords.</p>
+    <p>DoTask is independent and is not affiliated with Instructure (Canvas) or Google.</p>
+  </section>
+</main>
+
+<footer class="foot">
+  <a href="/">Home</a>
+  <a href="/privacy.html">Privacy policy</a>
+  <a href="/support.html" aria-current="page">Support</a>
+</footer>
+
+</body>
+</html>

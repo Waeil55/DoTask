@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DoTask: an AI assistant beside every website, for teachers and students</title>
+<meta name="description" content="DoTask is a free Chrome and Edge extension. It drafts Canvas grades and feedback for your review, keeps each student's history, tutors by voice, and does web tasks when you ask.">
+<link rel="icon" href="/icon-48.png">
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+
+<header class="brand"><img src="/icon-48.png" alt="" width="32" height="32"><span>DoTask</span></header>
+
+<main>
+  <section class="hero">
+    <div class="hero-text">
+      <svg class="check" viewBox="0 0 90 70" aria-hidden="true"><path d="M6 38 C14 44 24 56 32 64 C44 40 62 18 84 6"/></svg>
+      <h1>An assistant that sits beside every website.</h1>
+      <p class="lead">DoTask grades Canvas work with you, keeps every student's comments, tutors by voice, and does web tasks when you ask. It runs in your own browser with your own free AI key.</p>
+      <p class="get">
+        <a class="download" href="/downloads/DoTask-{{VERSION}}.zip">Download DoTask</a>
+      </p>
+      <p class="fine">Version {{VERSION}}, {{SIZE}} zip file. For Chrome or Edge on a computer. No account and no subscription.</p>
+    </div>
+
+    <div class="browser" role="img" aria-label="DoTask open beside a student's essay. The panel shows Jane Doe's name banner, a score of 17 out of 20, draft feedback, and a button labelled Post to Jane.">
+      <div class="page">
+        <b>Essay 1</b>
+        <span>Plants use sunlight, water and carbon dioxide to make food. Chlorophyll in the leaves captures the light…</span>
+      </div>
+      <div class="panel">
+        <div class="tabs"><i>Do</i><i class="on">Teach</i><i>Study</i><i>Write</i></div>
+        <div class="banner"><b>Jane Doe</b><small>Canvas ID 101, attempt 1</small></div>
+        <div class="score"><span>Score</span><b>17</b><span>of 20</span></div>
+        <p class="draft">You explained how chlorophyll captures light clearly. Next time, add where the oxygen goes.</p>
+        <div class="post">✓ Post to Jane</div>
+        <small class="wait">Nothing posts until you press this.</small>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <span class="note" aria-hidden="true">you review it first</span>
+    <h2>For teachers on Canvas</h2>
+    <ul>
+      <li>Drafts a grade and feedback for each submission, following your rubric and your notes.</li>
+      <li>Keeps every student's grades and comments, so you can come back to them any time.</li>
+      <li>Writes replies to Inbox messages, student comments and discussions, and writes announcements.</li>
+    </ul>
+  </section>
+
+  <section>
+    <span class="note" aria-hidden="true">never mixed up</span>
+    <h2>The right feedback reaches the right student</h2>
+    <ul>
+      <li>When it grades, each AI request holds one student's one submission, with the name left out.</li>
+      <li>Before a grade posts, DoTask fetches that submission again and checks it is the same student and the same attempt.</li>
+      <li>Each student has their own color, and the button says their name.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>For students</h2>
+    <p>Open a page or a PDF, Word, PowerPoint or Excel file, and talk to your tutor. It explains, quizzes you and makes flashcards. Interrupt it any time. It can see your screen, which you can switch off, and it can scroll the page and go to the next page of a lesson with you.</p>
+  </section>
+
+  <section>
+    <span class="note" aria-hidden="true">your choice</span>
+    <h2>For everything else on the web</h2>
+    <p>Tell it what you need. It reads the page, scrolls, clicks and fills in forms. You choose how much freedom it gets: review every step, get asked only before anything that sends, buys or deletes, or let it run on its own. Stop it at any moment.</p>
+  </section>
+
+  <section class="install" id="install">
+    <h2>Install it in three minutes</h2>
+    <ol>
+      <li><b>Unzip the download.</b> Right-click the file and choose Extract All.</li>
+      <li><b>Turn on Developer mode.</b> Type <kbd>chrome://extensions</kbd> in the address bar (<kbd>edge://extensions</kbd> in Edge) and switch on Developer mode, at the top right.</li>
+      <li><b>Add DoTask.</b> Click Load unpacked and choose the folder you unzipped.</li>
+      <li><b>Connect the free AI.</b> Press Alt+Shift+D to open DoTask, then go to Settings. Paste a free key from <a href="https://aistudio.google.com/apikey" rel="noopener">aistudio.google.com/apikey</a> and press Test connection.</li>
+    </ol>
+  </section>
+
+  <section>
+    <h2>Your data</h2>
+    <p>Student records, drafts and study files stay in your browser. There is no DoTask server. Your AI requests go straight to the AI service you pick.</p>
+    <p>On a free Google key, Google may use requests to improve its models. Submission text is part of those requests, so for real student work use a paid key, which costs a few cents for a whole class, or a local AI model such as Ollama.</p>
+  </section>
+
+  <section>
+    <h2>What it will not do</h2>
+    <p>It will not take graded quizzes or exams, click through courses to mark them complete, solve CAPTCHAs, get around site restrictions, or type passwords and payment details.</p>
+  </section>
+</main>
+
+<footer class="foot">
+  <a href="/privacy.html">Privacy policy</a>
+  <a href="/support.html">Support</a>
+</footer>
+
+</body>
+</html>

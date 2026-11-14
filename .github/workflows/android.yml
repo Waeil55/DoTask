@@ -1,0 +1,103 @@
+# Builds the Android app on GitHub's Linux runners.
+#   Always: a debug APK (artifact) to sideload and test.
+#   When secret ANDROID_KEYSTORE_B64 exists: a signed release AAB (artifact) for Google Play.
+# Secrets: ANDROID_KEYSTORE_B64 (base64 of the upload .jks), ANDROID_STORE_PASSWORD,
+# ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD. Run it from Actions -> Android -> Run workflow.
+name: Android
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  build:
+    name: Build APK (debug) and AAB (release)
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      # Secrets cannot be tested in a step's "if:", so turn "is it set?" into a plain flag here.
+      HAS_KEYSTORE: ${{ secrets.ANDROID_KEYSTORE_B64 != '' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: gradle
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+
+      # www/ and android/app/src/main/assets/public are generated, not committed.
+      - name: Build web assets and sync the Android project
+        working-directory: mobile
+        run: |
+          npm ci
+          node build.mjs
+          npx cap sync android
+
+      # gradlew loses its executable bit when the repo is committed from Windows.
+      - name: Assemble debug APK
+        working-directory: mobile/android
+        run: |
+          chmod +x gradlew
+          ./gradlew --no-daemon assembleDebug
+
+      - name: Upload debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: dotask-debug-apk-${{ github.run_number }}
+          path: mobile/android/app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
+
+      # Keystore and passwords only ever exist in RUNNER_TEMP; the last step deletes them.
+      # app/build.gradle reads DOTASK_KEYSTORE_PROPERTIES and DOTASK_VERSION_CODE.
+      # versionCode = 20100 + run number, so every uploaded AAB is higher than the last
+      # (and above the 2.1.0 default of 20100 used by local builds).
+      - name: Write the upload keystore
+        if: env.HAS_KEYSTORE == 'true'
+        env:
+          ANDROID_KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_B64 }}
+          ANDROID_STORE_PASSWORD: ${{ secrets.ANDROID_STORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          umask 077
+          printf '%s' "$ANDROID_KEYSTORE_B64" | tr -d '[:space:]' | base64 --decode > "$RUNNER_TEMP/upload.jks"
+          # .properties treats "\" as an escape character, so double it in every value.
+          esc() { printf '%s' "$1" | sed 's/\\/\\\\/g'; }
+          {
+            echo "storeFile=$(esc "$RUNNER_TEMP/upload.jks")"
+            echo "storePassword=$(esc "$ANDROID_STORE_PASSWORD")"
+            echo "keyAlias=$(esc "$ANDROID_KEY_ALIAS")"
+            echo "keyPassword=$(esc "$ANDROID_KEY_PASSWORD")"
+          } > "$RUNNER_TEMP/keystore.properties"
+          echo "DOTASK_KEYSTORE_PROPERTIES=$RUNNER_TEMP/keystore.properties" >> "$GITHUB_ENV"
+          echo "DOTASK_VERSION_CODE=$((20100 + GITHUB_RUN_NUMBER))" >> "$GITHUB_ENV"
+
+      - name: Bundle signed release AAB
+        if: env.HAS_KEYSTORE == 'true'
+        working-directory: mobile/android
+        run: ./gradlew --no-daemon bundleRelease
+
+      - name: Upload release AAB
+        if: env.HAS_KEYSTORE == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: dotask-release-aab-${{ github.run_number }}
+          path: mobile/android/app/build/outputs/bundle/release/app-release.aab
+          if-no-files-found: error
+
+      - name: Remove signing files
+        if: always()
+        run: rm -f "$RUNNER_TEMP/upload.jks" "$RUNNER_TEMP/keystore.properties"

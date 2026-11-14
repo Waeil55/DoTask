@@ -1,0 +1,269 @@
+/* A sheet of ruled school paper. All text sits on the rules, so vertical spacing moves in
+   whole rules (--r) and every block's height stays a multiple of it. */
+
+@font-face {
+  font-family: "Atkinson";
+  src: url("/fonts/atkinson.woff2") format("woff2");
+  font-weight: 200 800;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Kalam";
+  src: url("/fonts/kalam.woff2") format("woff2");
+  font-weight: 400;
+  font-display: swap;
+}
+
+:root {
+  --paper: #fafcff;
+  --rule: #cfdff4;
+  --red: #dc3f36;
+  --graphite: #24262b;
+  --soft: #555b67;
+  --pencil: #f6c945;
+  --violet: #5b4cf0;
+  --r: 32px;
+  --margin: clamp(26px, 12vw, 176px);
+}
+
+* { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  color: var(--graphite);
+  font: 400 18px/var(--r) "Atkinson", system-ui, "Segoe UI", sans-serif;
+  background-color: var(--paper);
+  background-image:
+    linear-gradient(to right, transparent calc(var(--margin) - 2px), var(--red) calc(var(--margin) - 2px), var(--red) var(--margin), transparent var(--margin)),
+    repeating-linear-gradient(to bottom, transparent 0, transparent calc(var(--r) - 1px), var(--rule) calc(var(--r) - 1px), var(--rule) var(--r));
+  background-position: 0 0, 0 -8px;
+  padding: var(--r) 0 calc(var(--r) * 3) calc(var(--margin) + 24px);
+  padding-right: 24px;
+}
+
+a { color: var(--violet); }
+a:focus-visible { outline: 3px solid var(--violet); outline-offset: 3px; border-radius: 2px; }
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: var(--r);
+  font-weight: 800;
+  margin-bottom: var(--r);
+}
+
+main { max-width: 1240px; }
+
+h1, h2, p, ul, ol { margin: 0; }
+
+h1 {
+  position: relative;
+  top: 5px;
+  font-size: clamp(38px, 5vw, 58px);
+  line-height: calc(var(--r) * 2);
+  font-weight: 800;
+  letter-spacing: -0.015em;
+  max-width: 13em;
+}
+
+h2 {
+  font-size: 25px;
+  line-height: var(--r);
+  font-weight: 800;
+}
+
+/* ---------- hero ---------- */
+.hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 560px);
+  gap: var(--r) 56px;
+  align-items: start;
+  margin-bottom: calc(var(--r) * 3);
+}
+
+.hero-text { position: relative; }
+
+.lead {
+  margin-top: var(--r);
+  max-width: 34em;
+  font-size: 20px;
+}
+
+.get { margin-top: var(--r); height: calc(var(--r) * 2); }
+
+.download {
+  display: inline-flex;
+  align-items: center;
+  height: calc(var(--r) * 2 - 4px);
+  padding: 0 34px;
+  color: var(--graphite);
+  background: var(--pencil);
+  border: 2px solid var(--graphite);
+  border-radius: 4px;
+  box-shadow: 0 4px 0 var(--graphite);
+  font-size: 21px;
+  font-weight: 800;
+  text-decoration: none;
+}
+.download:hover { background: #ffd65c; }
+.download:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--graphite); }
+.download:focus-visible { outline: 3px solid var(--violet); outline-offset: 4px; }
+
+.fine { margin-top: var(--r); color: var(--soft); max-width: 34em; font-size: 16px; }
+
+/* The one moving thing: the teacher's check mark draws itself once, in the margin. */
+.check {
+  position: absolute;
+  top: 8px;
+  left: calc(-1 * (var(--margin) + 24px) + (var(--margin) - 92px));
+  width: 74px;
+  height: 58px;
+  fill: none;
+  stroke: var(--red);
+  stroke-width: 7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 130;
+  stroke-dashoffset: 130;
+  animation: draw 0.7s 0.35s ease-out forwards;
+}
+@keyframes draw { to { stroke-dashoffset: 0; } }
+
+/* ---------- product picture ---------- */
+.browser {
+  display: grid;
+  grid-template-columns: 34% 66%;
+  overflow: hidden;
+  background: #fff;
+  border: 2px solid var(--graphite);
+  border-radius: 10px;
+  line-height: 1.35;
+  font-size: 13px;
+}
+
+.page {
+  padding: 18px 14px;
+  background: #eef1f6;
+  color: var(--soft);
+}
+.page b { display: block; margin-bottom: 8px; color: var(--graphite); font-size: 15px; }
+
+.panel { padding: 12px 14px 16px; border-left: 2px solid var(--graphite); }
+
+.tabs { display: flex; gap: 12px; margin-bottom: 12px; color: var(--soft); font-size: 13px; }
+.tabs i { font-style: normal; padding-bottom: 3px; }
+.tabs .on { color: var(--violet); font-weight: 800; border-bottom: 2px solid var(--violet); }
+
+.banner { padding: 10px 12px; background: #f9c9d6; border-radius: 6px; }
+.banner b { display: block; font-size: 17px; }
+
+.score { display: flex; align-items: baseline; gap: 6px; margin: 12px 0 6px; color: var(--soft); }
+.score b { color: var(--graphite); font-size: 26px; font-weight: 800; }
+
+.draft { padding: 9px 10px; border: 1px solid #c8ccd6; border-radius: 6px; }
+
+.post {
+  margin-top: 12px;
+  padding: 9px;
+  color: #fff;
+  background: #0f7b53;
+  border-radius: 6px;
+  font-size: 15px;
+  font-weight: 800;
+  text-align: center;
+}
+.wait { display: block; margin-top: 6px; color: var(--soft); text-align: center; }
+
+/* ---------- reading sections ---------- */
+section { position: relative; }
+main > section:not(.hero) { max-width: 700px; margin-bottom: var(--r); padding-bottom: var(--r); }
+
+ul { padding-left: 1.1em; }
+li::marker { color: var(--soft); }
+section p + p { margin-top: var(--r); }
+
+/* Red pen, written in the margin. */
+.note {
+  position: absolute;
+  top: 2px;
+  right: calc(100% + 40px);
+  width: calc(var(--margin) - 24px);
+  color: var(--red);
+  font: 400 19px/24px "Kalam", cursive;
+  text-align: right;
+  transform: rotate(-3deg);
+}
+
+/* Worksheet numbering: the numbers sit in the margin, left of the red line. */
+.install ol { list-style: none; padding: 0; counter-reset: step; }
+.install li { position: relative; counter-increment: step; }
+.install li::before {
+  content: counter(step) ".";
+  position: absolute;
+  right: calc(100% + 40px);
+  font-weight: 800;
+  font-size: 21px;
+}
+kbd { font: inherit; font-weight: 700; }
+
+/* ---------- footer (every page) ---------- */
+.foot { display: flex; flex-wrap: wrap; gap: 0 24px; max-width: 700px; color: var(--soft); font-size: 16px; }
+
+/* ---------- privacy and support pages ---------- */
+/* The logo links home on the inner pages; it must look exactly like the plain header on the home page. */
+.brand .home { display: flex; align-items: center; gap: 10px; color: inherit; text-decoration: none; }
+
+/* Long URLs and Canvas scope strings would otherwise push the page sideways on a phone. */
+.doc { overflow-wrap: break-word; }
+.doc code { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; font-size: 0.86em; line-height: 1; overflow-wrap: anywhere; }
+
+/* Blocks inside a section are one blank rule apart, except right under a heading (same rhythm as the home page). */
+.doc section > * + * { margin-top: var(--r); }
+.doc section > :is(h2, h3, .note) + * { margin-top: 0; } /* .note floats in the margin, so it takes no rule */
+.doc h3 { margin: 0; font-size: 20px; line-height: var(--r); font-weight: 800; }
+
+/* The "In short" box. A box-shadow outline (not a border) and a total vertical padding of one rule keep
+   the text below it on the ruled lines. */
+main.doc > section.summary {
+  padding: calc(var(--r) / 2) 22px;
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 0 0 2px var(--graphite);
+}
+
+.doc details > summary { cursor: pointer; color: var(--violet); font-weight: 700; }
+.doc details > summary:focus-visible { outline: 3px solid var(--violet); outline-offset: 3px; }
+.doc .scopes { font-size: 16px; }
+.doc details > ul + p { margin-top: var(--r); }
+
+@media (max-width: 760px) {
+  main.doc > section.summary { padding: calc(var(--r) / 2) 14px; }
+}
+
+/* ---------- smaller screens ---------- */
+@media (max-width: 1080px) {
+  .hero { grid-template-columns: minmax(0, 1fr); }
+  .browser { max-width: 560px; }
+}
+
+@media (max-width: 760px) {
+  body { padding-left: calc(var(--margin) + 14px); padding-right: 16px; font-size: 17px; }
+  h1 { top: 0; font-size: 29px; line-height: var(--r); }
+  h2 { font-size: 23px; }
+  .lead { font-size: 18px; }
+  .check, .note { display: none; }
+  .download { padding: 0 24px; }
+  .install ol { padding-left: 1.4em; }
+  .install li::before { right: calc(100% + 6px); font-size: 17px; }
+  .browser { grid-template-columns: 100%; }
+  .page { display: none; }
+  .panel { border-left: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .check { animation: none; stroke-dashoffset: 0; }
+  .download:active { transform: none; }
+}

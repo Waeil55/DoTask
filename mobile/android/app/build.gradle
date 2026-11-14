@@ -1,0 +1,157 @@
+apply plugin: 'com.android.application'
+
+// ---------------------------------------------------------------------------
+// Version. mobile/package.json "version" is the single source of truth, so the
+// Play build can't drift from the web bundle and the iOS build.
+// Google Play needs a versionCode that grows with every upload. Default is
+// major*10000 + minor*100 + patch (2.1.0 -> 20100). CI or the owner can override
+// it with env DOTASK_VERSION_CODE (e.g. to re-upload a fixed 2.1.0 as 20101).
+// ---------------------------------------------------------------------------
+def dotaskPackageJson = file('../../package.json') // mobile/package.json
+def dotaskVersionName = new groovy.json.JsonSlurper().parse(dotaskPackageJson).version?.toString()
+if (!dotaskVersionName) {
+    throw new GradleException("DoTask: no \"version\" found in ${dotaskPackageJson}")
+}
+def dotaskVersionCode = {
+    def fromEnv = System.getenv('DOTASK_VERSION_CODE')?.trim()
+    if (fromEnv) {
+        // 2100000000 is Google Play's upper limit for versionCode.
+        if (!(fromEnv ==~ /\d{1,10}/) || fromEnv.toLong() < 1L || fromEnv.toLong() > 2100000000L) {
+            throw new GradleException("DoTask: DOTASK_VERSION_CODE must be a whole number from 1 to 2100000000 (got '${fromEnv}')")
+        }
+        return fromEnv.toInteger()
+    }
+    def m = dotaskVersionName =~ /^(\d+)\.(\d+)\.(\d+)/
+    if (!m.find()) {
+        throw new GradleException("DoTask: package.json version '${dotaskVersionName}' is not MAJOR.MINOR.PATCH")
+    }
+    def major = m.group(1).toInteger()
+    def minor = m.group(2).toInteger()
+    def patch = m.group(3).toInteger()
+    // Minor and patch get two digits each; 2.1.100 would collide with 2.2.0.
+    if (minor > 99 || patch > 99) {
+        throw new GradleException("DoTask: minor/patch above 99 can't be turned into a versionCode; set DOTASK_VERSION_CODE")
+    }
+    return major * 10000 + minor * 100 + patch
+}()
+
+// ---------------------------------------------------------------------------
+// Release signing with the Play UPLOAD key. No password is ever stored in the
+// project: they come from a keystore.properties file (keys: storeFile,
+// storePassword, keyAlias, keyPassword) that `npm run android:keystore` writes.
+// The first file that exists wins:
+//   1. env DOTASK_KEYSTORE_PROPERTIES (CI writes it from secrets; absolute, or
+//      relative to mobile/android)
+//   2. <user home>/.dotask/keystore.properties (default: outside the project, so
+//      it can't be zipped up or committed by accident)
+//   3. mobile/android/keystore.properties (git-ignored fallback)
+// With no file, release builds are left unsigned (Play rejects those) but Gradle
+// still configures, so debug builds and IDE sync work on any machine.
+// ---------------------------------------------------------------------------
+def dotaskSigningFile = {
+    def fromEnv = System.getenv('DOTASK_KEYSTORE_PROPERTIES')?.trim()
+    def envFile = fromEnv ? rootProject.file(fromEnv) : null
+    if (envFile != null && !envFile.isFile()) {
+        logger.warn("DoTask: DOTASK_KEYSTORE_PROPERTIES points to a missing file: ${envFile}")
+    }
+    def candidates = [envFile,
+                      new File(System.getProperty('user.home'), '.dotask/keystore.properties'),
+                      rootProject.file('keystore.properties')]
+    return candidates.find { it != null && it.isFile() }
+}()
+def dotaskSigning = null
+if (dotaskSigningFile != null) {
+    def props = new Properties()
+    dotaskSigningFile.withInputStream { props.load(it) }
+    def missing = ['storeFile', 'storePassword', 'keyAlias', 'keyPassword'].findAll { !props.getProperty(it) }
+    if (missing) {
+        // Names only, never values: this message ends up in CI logs.
+        throw new GradleException("DoTask: ${dotaskSigningFile} is missing: ${missing.join(', ')}")
+    }
+    def store = new File(props.getProperty('storeFile'))
+    // A relative storeFile is read relative to the properties file, not Gradle's working dir.
+    if (!store.isAbsolute()) {
+        store = new File(dotaskSigningFile.parentFile, props.getProperty('storeFile'))
+    }
+    dotaskSigning = [storeFile    : store,
+                     storePassword: props.getProperty('storePassword'),
+                     keyAlias     : props.getProperty('keyAlias'),
+                     keyPassword  : props.getProperty('keyPassword')]
+}
+// Only talk about signing when a release task was asked for, to keep debug output quiet.
+if (gradle.startParameter.taskNames.any { it.toLowerCase().contains('release') }) {
+    if (dotaskSigning != null) {
+        logger.lifecycle("DoTask: signing release with the upload key from ${dotaskSigningFile}")
+    } else {
+        logger.warn("DoTask: no keystore.properties found, so this release build will be UNSIGNED " +
+                "and Google Play will reject it. Run `npm run android:keystore` (see mobile/ANDROID.md).")
+    }
+}
+
+android {
+    namespace = "com.agapecare.dotask"
+    compileSdk = rootProject.ext.compileSdkVersion
+    defaultConfig {
+        applicationId "com.agapecare.dotask"
+        minSdkVersion rootProject.ext.minSdkVersion
+        targetSdkVersion rootProject.ext.targetSdkVersion
+        versionCode dotaskVersionCode
+        versionName dotaskVersionName
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        aaptOptions {
+             // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
+             // Default: https://android.googlesource.com/platform/frameworks/base/+/282e181b58cf72b6ca770dc7ca5f91f135444502/tools/aapt/AaptAssets.cpp#61
+            ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
+        }
+    }
+    signingConfigs {
+        // Defined only when a keystore.properties was found; referencing an
+        // undefined signingConfigs.release would break configuration.
+        if (dotaskSigning != null) {
+            release {
+                storeFile dotaskSigning.storeFile
+                storePassword dotaskSigning.storePassword
+                keyAlias dotaskSigning.keyAlias
+                keyPassword dotaskSigning.keyPassword
+            }
+        }
+    }
+    buildTypes {
+        release {
+            if (dotaskSigning != null) {
+                signingConfig signingConfigs.release
+            }
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+}
+
+repositories {
+    flatDir{
+        dirs '../capacitor-cordova-android-plugins/src/main/libs', 'libs'
+    }
+}
+
+dependencies {
+    implementation fileTree(include: ['*.jar'], dir: 'libs')
+    implementation "androidx.appcompat:appcompat:$androidxAppCompatVersion"
+    implementation "androidx.coordinatorlayout:coordinatorlayout:$androidxCoordinatorLayoutVersion"
+    implementation "androidx.core:core-splashscreen:$coreSplashScreenVersion"
+    implementation project(':capacitor-android')
+    testImplementation "junit:junit:$junitVersion"
+    androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
+    androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"
+    implementation project(':capacitor-cordova-android-plugins')
+}
+
+apply from: 'capacitor.build.gradle'
+
+try {
+    def servicesJSON = file('google-services.json')
+    if (servicesJSON.text) {
+        apply plugin: 'com.google.gms.google-services'
+    }
+} catch(Exception e) {
+    logger.info("google-services.json not found, google-services plugin not applied. Push Notifications won't work")
+}

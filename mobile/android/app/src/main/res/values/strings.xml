@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">DoTask</string>
+    <string name="title_activity_main">DoTask</string>
+    <string name="package_name">com.agapecare.dotask</string>
+    <string name="custom_url_scheme">com.agapecare.dotask</string>
+</resources>

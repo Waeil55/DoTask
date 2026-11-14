@@ -1,0 +1,190 @@
+# Builds the iOS app on GitHub's macOS runners (the project has no Mac).
+#   compile: unsigned simulator build, a free check that the Xcode project and plugins build.
+#   upload:  signed Release archive uploaded to App Store Connect / TestFlight (inputs.upload).
+# Setup and secrets: mobile/IOS.md. Run it from Actions -> iOS -> Run workflow.
+name: iOS
+
+on:
+  workflow_dispatch:
+    inputs:
+      upload:
+        description: Also archive, sign and upload to App Store Connect (TestFlight)
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+# Two runs at once could both ask Apple to create signing certificates/profiles; queue them.
+concurrency:
+  group: ios-${{ github.ref }}
+  cancel-in-progress: false
+
+defaults:
+  run:
+    # Explicit bash gives "-eo pipefail", so a failing xcodebuild piped into tee fails the step.
+    shell: bash
+
+jobs:
+  compile:
+    name: Compile (simulator, unsigned)
+    # only when not uploading: the repo is private, so macOS minutes count, and the upload job compiles anyway
+    if: ${{ !inputs.upload }}
+    runs-on: macos-26
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      # Runner images carry several Xcodes; pick the newest released 26.x (no beta/RC names,
+      # because App Store Connect rejects builds made with beta Xcode).
+      - name: Select Xcode 26
+        run: |
+          ls -d /Applications/Xcode*.app
+          VERSION="$(ls -d /Applications/Xcode_26*.app 2>/dev/null \
+            | sed -nE 's#^/Applications/Xcode_(26(\.[0-9]+)*)\.app$#\1#p' \
+            | sort -t . -k1,1n -k2,2n -k3,3n | tail -n 1 || true)"
+          if [ -z "$VERSION" ]; then echo "::error::No released Xcode 26.x on this runner"; exit 1; fi
+          sudo xcode-select -s "/Applications/Xcode_${VERSION}.app/Contents/Developer"
+          xcodebuild -version
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+
+      # www/, App/App/public, capacitor.config.json and CapApp-SPM/Package.swift are generated.
+      - name: Build web assets and sync the iOS project
+        working-directory: mobile
+        run: |
+          npm ci
+          node build.mjs
+          npx cap sync ios
+
+      - name: Compile for the iOS Simulator (no signing)
+        run: |
+          xcodebuild \
+            -project mobile/ios/App/App.xcodeproj \
+            -scheme App \
+            -configuration Debug \
+            -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' \
+            CODE_SIGNING_ALLOWED=NO \
+            build
+
+  upload:
+    name: Archive and upload to App Store Connect
+    if: ${{ inputs.upload }}
+    runs-on: macos-26
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Select Xcode 26
+        run: |
+          ls -d /Applications/Xcode*.app
+          VERSION="$(ls -d /Applications/Xcode_26*.app 2>/dev/null \
+            | sed -nE 's#^/Applications/Xcode_(26(\.[0-9]+)*)\.app$#\1#p' \
+            | sort -t . -k1,1n -k2,2n -k3,3n | tail -n 1 || true)"
+          if [ -z "$VERSION" ]; then echo "::error::No released Xcode 26.x on this runner"; exit 1; fi
+          sudo xcode-select -s "/Applications/Xcode_${VERSION}.app/Contents/Developer"
+          xcodebuild -version
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+
+      - name: Build web assets and sync the iOS project
+        working-directory: mobile
+        run: |
+          npm ci
+          node build.mjs
+          npx cap sync ios
+
+      # The .p8 only ever exists in RUNNER_TEMP for this job and is deleted in the last step.
+      # Secrets go through env (never inline ${{ }} in scripts) so they cannot inject shell code.
+      - name: Write the App Store Connect API key
+        env:
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          for name in ASC_KEY_P8 ASC_KEY_ID ASC_ISSUER_ID APPLE_TEAM_ID; do
+            if [ -z "${!name}" ]; then echo "::error::Secret $name is not set (see mobile/IOS.md)"; exit 1; fi
+          done
+          umask 077
+          # Expected: base64 of the .p8. Also accept the raw .p8 text in case it was pasted as-is.
+          if printf '%s' "$ASC_KEY_P8" | grep -q 'BEGIN PRIVATE KEY'; then
+            printf '%s\n' "$ASC_KEY_P8" > "$RUNNER_TEMP/AuthKey.p8"
+          else
+            printf '%s' "$ASC_KEY_P8" | tr -d '[:space:]' | base64 --decode > "$RUNNER_TEMP/AuthKey.p8"
+          fi
+          grep -q 'BEGIN PRIVATE KEY' "$RUNNER_TEMP/AuthKey.p8" || { echo "::error::ASC_KEY_P8 did not decode to a .p8 key"; exit 1; }
+          mkdir -p "$RUNNER_TEMP/logs"
+
+      # Archived UNSIGNED: signing at archive time would need a development profile, and that
+      # needs a registered test device. The export step below signs once, for the App Store,
+      # with cloud-managed signing (the Admin API key lets Xcode create the certificate and
+      # profile itself). This is the same recipe that uploads the owner's other apps.
+      # CURRENT_PROJECT_VERSION = run number gives every upload a new, increasing build number.
+      - name: Archive (Release, unsigned)
+        env:
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          BUILD_NUMBER: ${{ github.run_number }}
+        run: |
+          xcodebuild archive \
+            -project mobile/ios/App/App.xcodeproj \
+            -scheme App \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -archivePath "$RUNNER_TEMP/DoTask.xcarchive" \
+            DEVELOPMENT_TEAM="$APPLE_TEAM_ID" \
+            CODE_SIGN_STYLE=Automatic \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
+            CURRENT_PROJECT_VERSION="$BUILD_NUMBER" \
+            2>&1 | tee "$RUNNER_TEMP/logs/archive.log"
+
+      # ExportOptions.plist has destination=upload, so this step signs for the App Store and
+      # sends the build to App Store Connect, where it appears in TestFlight after processing.
+      - name: Export and upload to App Store Connect
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          cp mobile/ios/ExportOptions.plist "$RUNNER_TEMP/ExportOptions.plist"
+          /usr/libexec/PlistBuddy -c "Set :teamID $APPLE_TEAM_ID" "$RUNNER_TEMP/ExportOptions.plist"
+          xcodebuild -exportArchive \
+            -archivePath "$RUNNER_TEMP/DoTask.xcarchive" \
+            -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist" \
+            -exportPath "$RUNNER_TEMP/export" \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "$RUNNER_TEMP/AuthKey.p8" \
+            -authenticationKeyID "$ASC_KEY_ID" \
+            -authenticationKeyIssuerID "$ASC_ISSUER_ID" \
+            2>&1 | tee "$RUNNER_TEMP/logs/export.log"
+
+      - name: Remove the API key
+        if: always()
+        run: rm -f "$RUNNER_TEMP/AuthKey.p8"
+
+      # Xcode writes the detailed export/upload logs to a *.xcdistributionlogs folder in TMPDIR.
+      - name: Collect distribution logs
+        if: failure()
+        run: |
+          mkdir -p "$RUNNER_TEMP/logs"
+          find "${TMPDIR:-/tmp}" -maxdepth 1 -name '*.xcdistributionlogs' -exec cp -R {} "$RUNNER_TEMP/logs/" \; || true
+
+      - name: Keep dSYMs and logs for debugging
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-upload-debug-${{ github.run_number }}
+          path: |
+            ${{ runner.temp }}/logs
+            ${{ runner.temp }}/DoTask.xcarchive/dSYMs
+          if-no-files-found: ignore
+          retention-days: 7

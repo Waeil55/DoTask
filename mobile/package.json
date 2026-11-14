@@ -1,0 +1,33 @@
+{
+  "name": "dotask-mobile",
+  "version": "2.1.0",
+  "private": true,
+  "description": "DoTask for iPhone, iPad and Android: the extension's Teach, Study and Write tools in a Capacitor app.",
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs",
+    "sync": "node build.mjs && npx cap sync",
+    "android:debug": "node build.mjs && npx cap sync android && cd android && gradlew.bat assembleDebug",
+    "android:release": "node build.mjs && npx cap sync android && cd android && gradlew.bat bundleRelease",
+    "android:keystore": "node tools/android-keystore.mjs",
+    "test": "node tests/mobile-e2e.mjs"
+  },
+  "engines": { "node": ">=22" },
+  "dependencies": {
+    "@aparajita/capacitor-secure-storage": "8.0.1",
+    "@capacitor/android": "8.6.2",
+    "@capacitor/app": "8.1.2",
+    "@capacitor/browser": "8.0.5",
+    "@capacitor/core": "8.6.2",
+    "@capacitor/filesystem": "8.1.5",
+    "@capacitor/ios": "8.6.2",
+    "@capacitor/keyboard": "8.0.6",
+    "@capacitor/preferences": "8.0.1",
+    "@capacitor/share": "8.0.3",
+    "@capacitor/splash-screen": "8.0.2",
+    "@capacitor/status-bar": "8.0.4"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "8.6.2"
+  }
+}

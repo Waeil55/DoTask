@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>DoTask — allow microphone</title>
+  <style>
+    body { font: 16px/1.5 system-ui, sans-serif; display: grid; place-items: center; min-height: 100vh; margin: 0; background: #f6f5ff; color: #1d1b2f }
+    .card { background: #fff; padding: 32px 36px; border-radius: 18px; box-shadow: 0 10px 40px rgba(60, 50, 160, .12); max-width: 440px; text-align: center }
+    button { font: 600 16px system-ui; background: #5b4cf0; color: #fff; border: 0; padding: 12px 22px; border-radius: 12px; cursor: pointer }
+    .ok { color: #0f8a5f; font-weight: 600 }
+    .err { color: #c23030 }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <img src="icons/icon128.png" width="64" height="64" alt="">
+    <h2>Let DoTask hear you</h2>
+    <p>The voice tutor and dictation need your microphone. Chrome only asks once.</p>
+    <button id="allow">Allow microphone</button>
+    <p id="status"></p>
+  </div>
+  <script type="module" src="permission.js"></script>
+</body>
+</html>

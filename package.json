@@ -1,0 +1,20 @@
+{
+  "name": "dotask",
+  "version": "2.0.0",
+  "private": true,
+  "description": "DoTask AI \u2014 browser extension for teachers and students. No server; runs on your own free AI key.",
+  "type": "module",
+  "scripts": {
+    "test": "node --test tests/unit.test.mjs tests/demo-canvas.test.mjs",
+    "e2e": "node tests/e2e.mjs",
+    "check": "npm test && npm run e2e",
+    "icons": "node tools/make-icons.mjs",
+    "pack": "node tools/pack.mjs",
+    "smoke": "node tools/smoke.mjs",
+    "deploy": "node tools/deploy.mjs",
+    "real": "node tests/real-ai.mjs"
+  },
+  "devDependencies": {
+    "playwright": "1.63.0"
+  }
+}

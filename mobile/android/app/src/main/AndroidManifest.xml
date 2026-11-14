@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <!--
+      Backup is OFF on purpose: the app holds teacher-side student records (grading
+      history) and Keystore-wrapped secrets (Gemini key, Canvas tokens). Student data
+      must not land in a personal Google Drive backup, and Keystore-wrapped secrets can't
+      be decrypted on another device anyway. allowBackup="false" stops cloud backup;
+      on Android 12+ device-to-device transfer ignores that flag, so
+      data_extraction_rules.xml excludes everything from both. backup_rules.xml covers
+      Android 6-11. tools:targetApi silences the "attribute needs API 31" lint warning
+      (older Android simply ignores dataExtractionRules).
+    -->
+    <application
+        android:allowBackup="false"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="@xml/backup_rules"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/AppTheme"
+        tools:targetApi="31">
+
+        <activity
+            android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|smallestScreenSize|screenLayout|uiMode|navigation|density"
+            android:name=".MainActivity"
+            android:label="@string/title_activity_main"
+            android:theme="@style/AppTheme.NoActionBarLaunch"
+            android:launchMode="singleTask"
+            android:exported="true">
+
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+
+            <!--
+              Canvas OAuth2 + PKCE redirect (com.agapecare.dotask:/oauth/canvas).
+              The system browser hands the redirect back here; singleTask means the
+              running activity gets it and the Capacitor App plugin fires appUrlOpen.
+              The URI has no host, so Android can only match on the scheme.
+            -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="com.agapecare.dotask" />
+            </intent-filter>
+
+        </activity>
+
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths"></meta-data>
+        </provider>
+    </application>
+
+    <!-- Permissions -->
+
+    <uses-permission android:name="android.permission.INTERNET" />
+
+    <!--
+      Live voice tutor: the WebView's getUserMedia() needs the mic (RECORD_AUDIO),
+      WebRTC audio routing needs MODIFY_AUDIO_SETTINGS, and "tutor sees through the
+      camera" needs CAMERA. Capacitor's BridgeWebChromeClient asks for the runtime
+      permission only when the page requests it, and only if it is declared here.
+      There are deliberately no storage/media/foreground-service permissions.
+    -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+    <uses-permission android:name="android.permission.CAMERA" />
+
+    <!--
+      CAMERA / RECORD_AUDIO would otherwise make Google Play assume these features are
+      required and hide the app from devices without them (some tablets and
+      Chromebooks). Everything except the live tutor works without them.
+      The CAMERA permission also implies camera.autofocus, so mark that optional too.
+    -->
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
+    <uses-feature android:name="android.hardware.camera.autofocus" android:required="false" />
+    <uses-feature android:name="android.hardware.microphone" android:required="false" />
+</manifest>

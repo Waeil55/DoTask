@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DoTask privacy policy</title>
+<meta name="description" content="How DoTask handles your information: no DoTask server, no accounts, no analytics. Data stays on your device and goes only to the AI provider you choose and your school's Canvas, when you use a feature.">
+<link rel="icon" href="/icon-48.png">
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<!-- OWNER, before deploying: replace every waeil.usa@gmail.com with the real address, and make sure "Agape Care"
+     matches the developer name on the App Store and Google Play listings (Play requires the policy to name that
+     entity). The site's CSP forbids inline styles and scripts, so all styling lives in /style.css. -->
+
+<header class="brand"><a class="home" href="/"><img src="/icon-48.png" alt="" width="32" height="32"><span>DoTask</span></a></header>
+
+<main class="doc">
+  <section>
+    <h1>Privacy policy</h1>
+    <p class="fine">Effective November 13, 2026. This policy covers the DoTask app for iPhone and Android, and the DoTask browser extension.</p>
+  </section>
+
+  <section class="summary" aria-labelledby="short">
+    <span class="note" aria-hidden="true">nothing comes to us</span>
+    <h2 id="short">In short</h2>
+    <ul>
+      <li>DoTask has no server, no accounts, no analytics, no ads and no tracking. We never receive your data.</li>
+      <li>Your settings, student history, drafts and study files stay on your device.</li>
+      <li>When you use an AI feature, and only after you allow it, DoTask sends what that feature needs straight from your device to Google Gemini under your own API key, or to an OpenAI-compatible provider you set up.</li>
+      <li>For teachers, DoTask talks to your school's Canvas only to do what you ask. Grading prompts leave out student names.</li>
+      <li>On a free-tier Google key, Google may use what you send to improve its products. Use a paid-tier key for student records.</li>
+      <li>You can delete your data in Settings, or uninstall the app.</li>
+    </ul>
+  </section>
+
+  <section id="who">
+    <h2>Who we are</h2>
+    <p>DoTask is an AI assistant for teachers and adult learners. It is made by Agape Care ("we", "us"). This policy explains what happens to information when you use DoTask.</p>
+    <p>DoTask is independent. It is not affiliated with or endorsed by Instructure, which makes Canvas, or by Google. Because DoTask has no server of its own, we cannot see, store or hand over your data. The services DoTask connects to for you handle what you send them under their own terms.</p>
+  </section>
+
+  <section id="device">
+    <h2>What stays on your device</h2>
+    <ul>
+      <li>Your settings, your role (teacher or student) and your choice about AI use.</li>
+      <li>Your Gemini API key, any other AI provider key, your Canvas sign-in tokens, and the Canvas client secret if your administrator gave you one. These are kept in the iOS Keychain or the Android Keystore.</li>
+      <li>For teachers: each student's history of grades, rubric scores, feedback and comments, kept separately for each student and never mixed between students; your drafts; course information loaded from Canvas; and an activity log of what DoTask did for you.</li>
+      <li>For Study and Write: the files, photos and text you add, and the explanations, summaries, quizzes, flashcards, study plans and drafts made from them.</li>
+      <li>The usage numbers and cost estimate in Settings, which are counted on the device.</li>
+      <li>A safety copy of your data in the app's private storage, because a phone that is nearly full may clear an app's web storage.</li>
+    </ul>
+    <p>Backups you make go only where you send them with the share sheet. We never receive them.</p>
+    <!-- Accuracy: iOS includes an app's storage in the user's own iCloud or computer backups unless the app opts
+         out, and the iOS project does not opt out today. Android backup is switched off in the app's manifest. -->
+    <p>On iPhone, like other apps' data, DoTask's storage can be included in your own iCloud or computer backup of the phone, under your Apple account. On Android, DoTask switches device backup off, so its data stays on the phone.</p>
+  </section>
+
+  <section id="sent">
+    <h2>What leaves your device, and to whom</h2>
+    <p>Nothing leaves your device until you use a feature that needs it. Before the first AI request, DoTask shows what it will send and asks for your permission. If you choose Not now, no AI request is made. All connections are encrypted (HTTPS, and WSS for the live voice tutor).</p>
+
+    <h3>Google Gemini API (Google LLC)</h3>
+    <p>When you use an AI feature, DoTask sends the content for that request directly from your device to Google, under your own API key:</p>
+    <ul>
+      <li>what you type or ask, and the files, photos or pasted text you add;</li>
+      <li>your voice, while the voice tutor is on;</li>
+      <li>pictures from your camera, only while "Show my camera" is on;</li>
+      <li>for teachers, the Canvas content the task needs: the student's work and attached files, the assignment and its rubric, your notes, grades and feedback, and the message or discussion post you are replying to;</li>
+      <li>your own name or sign-off, if you enter one in Settings, so drafts can be signed with it.</li>
+    </ul>
+    <p>Grading prompts leave out student names. Messages and discussion posts you ask DoTask to reply to are sent as they are, so they may contain names. Google uses this content to produce the answer, under the <a href="https://ai.google.dev/gemini-api/terms" rel="noopener">Gemini API Additional Terms of Service</a> and the <a href="https://policies.google.com/privacy" rel="noopener">Google Privacy Policy</a>.</p>
+
+    <h3>An OpenAI-compatible provider, if you set one up</h3>
+    <p>If you add another AI provider in Settings, the same kinds of content go to that provider instead of Google, under that provider's terms. You choose the provider, so read its privacy terms first.</p>
+    <!-- Accuracy: without Gemini there is no live voice session, so study.js falls back to BasicVoice, which uses
+         the web view's SpeechRecognition where the phone provides it (on iPhone that is Apple's speech service). -->
+    <p>With such a provider, the voice tutor uses your phone's own speech recognition where it is available (on iPhone, Apple's speech service, under Apple's terms) and sends the provider the text of what you said rather than your voice.</p>
+
+    <h3>Your school's Canvas</h3>
+    <p>When you connect Canvas, you sign in on your school's own Canvas page in your browser, so DoTask never sees your Canvas password. DoTask then uses the Canvas API, with your own Canvas permissions, to read your courses, assignments, rubrics, submissions, students, comments, Inbox, discussions and announcements, and to post grades, comments, replies and announcements when you press the button to post. That data lives in your school's Canvas, under your school's agreements and policies.</p>
+
+    <h3>Demo School</h3>
+    <p>Demo School is a fictional school with sample data kept in the app. Nothing from it goes to a real Canvas. If you use AI features in Demo School, the sample content is sent to the AI like any other request.</p>
+
+    <h3>Nobody else</h3>
+    <p>DoTask contains no advertising, analytics or tracking code. We do not sell, rent or share data, and we have none to sell.</p>
+  </section>
+
+  <section id="tiers">
+    <h2>Google's free tier and paid tier</h2>
+    <p>Your API key decides how Google treats what you send.</p>
+    <ul>
+      <li><b>Free tier</b> (no billing): Google's terms say Google may use the content you send, and the answers, to provide, improve and develop its products, and that people may review it. Google asks you not to send sensitive, confidential or personal information on the free tier.</li>
+      <li><b>Paid tier</b> (billing turned on for the key's project): Google's terms say Google does not use your prompts or answers to improve its products. Google may still keep them for a limited time to detect abuse.</li>
+    </ul>
+    <p>For student records or anything personal, use a paid-tier key. Grading a whole class usually costs a few cents, and Settings shows your usage and an estimated cost. Google, not DoTask, sets these terms, so check <a href="https://ai.google.dev/gemini-api/terms" rel="noopener">Google's current terms</a>.</p>
+  </section>
+
+  <section id="students">
+    <h2>Student records, FERPA and school policies</h2>
+    <ul>
+      <li>Use DoTask only as your school's or district's policies allow, including FERPA and other student-privacy laws. If you are not sure, ask your school before you connect real classes.</li>
+      <li>Each grading request holds one student's one submission, with the student's name left out. If a student's name appears inside the work itself or in the name of an attached file, that text is part of the submission.</li>
+      <li>Student history is kept on your device, separately for each student, and never mixed between students.</li>
+      <li>Every grade, comment and reply is a draft until you review it and press the button to post it.</li>
+      <li>We never receive student records. They go only to your school's Canvas and to the AI provider you chose.</li>
+    </ul>
+  </section>
+
+  <section id="permissions">
+    <h2>Permissions</h2>
+    <ul>
+      <li><b>Microphone</b>: only while you talk with the voice tutor, after you tap to start it.</li>
+      <li><b>Camera</b>: when you take a photo of a page, or while "Show my camera" is on in the voice tutor.</li>
+      <li><b>Photos and files</b>: you choose them with the system photo or file picker, and DoTask receives only the items you pick. It does not ask for access to your whole photo library.</li>
+      <li><b>Internet</b>: to reach the AI provider and your school's Canvas.</li>
+    </ul>
+    <p>DoTask does not ask for your location or your contacts. You can turn the microphone and camera off in your phone's settings at any time, and the features that do not need them keep working.</p>
+  </section>
+
+  <section id="children">
+    <h2>Children</h2>
+    <p>DoTask is for adults 18 and over: teachers and adult learners. It is not directed to children, and Google's Gemini API terms do not allow apps directed to, or likely to be used by, people under 18. Please do not use DoTask if you are under 18.</p>
+    <p>If you believe someone under 18 has used DoTask or entered their information, deleting the app's data on that device (Settings, then Delete all, then clearing the key, or uninstalling the app) removes it from the device. We never receive it, so there is nothing to delete on our side, but write to us at <a href="mailto:waeil.usa@gmail.com">waeil.usa@gmail.com</a> and we will help you remove it and explain how to ask Google about anything already sent to the Gemini API.</p>
+  </section>
+
+  <section id="retention">
+    <h2>How long data is kept, and deleting it</h2>
+    <ul>
+      <li><b>On your device</b>: until you delete it. Settings, then Delete all, erases student history, drafts, study files, the activity log and the safety copy. Your settings, usage counts and AI key stay: clear the API key field in Settings and choose Sign out of Canvas to delete your key and Canvas sign-in. Uninstalling DoTask removes the app's storage. On iPhone, iOS can keep Keychain items after an app is deleted, so remove your key and sign out of Canvas in Settings before you uninstall.</li>
+      <li><b>Backups you exported</b>: wherever you saved them. Delete them there.</li>
+      <li><b>Google</b>: kept and deleted under Google's terms for your tier. You can delete your API key at any time in Google AI Studio.</li>
+      <li><b>Your school's Canvas</b>: grades, comments, replies and announcements you posted stay in Canvas like anything else posted there. To end DoTask's access, sign out of Canvas in DoTask, or remove DoTask under Account, Settings, Approved Integrations in Canvas.</li>
+      <li><b>Us</b>: we keep nothing, because we receive nothing. If you email us, we keep the email only as long as we need to answer it.</li>
+    </ul>
+  </section>
+
+  <section id="security">
+    <h2>Security</h2>
+    <ul>
+      <li>API keys and Canvas tokens are stored in the iOS Keychain or the Android Keystore, not in plain app storage.</li>
+      <li>Everything DoTask sends goes over encrypted connections (HTTPS and WSS).</li>
+      <li>Canvas sign-in uses OAuth with PKCE in your phone's browser, so DoTask never handles your Canvas password. DoTask never types passwords or payment details anywhere.</li>
+      <li>Your other data stays in the app's private storage, which the phone's operating system keeps apart from other apps.</li>
+    </ul>
+    <p>No system is perfectly secure. Protect your phone with a passcode, and keep your API key private.</p>
+  </section>
+
+  <section id="extension">
+    <h2>The DoTask browser extension</h2>
+    <p>The DoTask extension for Chrome and Edge follows the same principles: no DoTask server, no accounts, no analytics, no ads and no tracking.</p>
+    <ul>
+      <li>Its data (settings, keys, student history, drafts, study files and the activity log) is kept in your browser's storage on your computer. Back up saves it to a file you keep.</li>
+      <li>It works with Canvas through the Canvas tab you are already signed in to, or through a Canvas access token if you add one.</li>
+      <li>When you ask it to work on a page, the content of that page, and what it can see of your screen unless you switch that off, go to the AI provider you chose. It reads files only from folders you add.</li>
+      <li>You can choose a model that runs on your own computer, such as Ollama, so AI requests do not leave the computer.</li>
+      <!-- Accuracy: the extension's Delete all (views/settings.js) keeps settings and the AI key, like the app's. -->
+      <li>Removing the extension erases its data from the browser. Delete all in its Settings erases student history, drafts, study files and the activity log, and keeps your settings and AI key.</li>
+    </ul>
+  </section>
+
+  <section id="website">
+    <h2>This website</h2>
+    <p>dotask5.web.app is a static site hosted on Firebase Hosting by Google. Like any web host, it processes connection details such as your IP address to deliver the pages. The site sets no cookies and has no analytics, trackers or scripts.</p>
+  </section>
+
+  <section id="international">
+    <h2>Users outside the United States</h2>
+    <p>DoTask sends nothing to us. Content you send to Google or to another AI provider may be processed in the United States and other countries where that provider operates, under its terms. If you are in the European Economic Area, the United Kingdom or Switzerland, Google's terms require you to use a paid-tier key with DoTask.</p>
+    <p>The data on your device is in your control: you can see it, back it up and delete it in the app. For data held by Google or by your school's Canvas, use their tools or contact them. We are glad to explain how, but we cannot act for them.</p>
+  </section>
+
+  <section id="changes">
+    <h2>Changes to this policy</h2>
+    <p>If we change how DoTask handles information, we will update this page and its effective date. Significant changes will also be described in the app's release notes.</p>
+  </section>
+
+  <section id="contact">
+    <h2>Contact</h2>
+    <p>Questions or requests: <a href="mailto:waeil.usa@gmail.com">waeil.usa@gmail.com</a>. Please do not send student information, API keys or passwords by email.</p>
+  </section>
+</main>
+
+<footer class="foot">
+  <a href="/">Home</a>
+  <a href="/privacy.html" aria-current="page">Privacy policy</a>
+  <a href="/support.html">Support</a>
+</footer>
+
+</body>
+</html>

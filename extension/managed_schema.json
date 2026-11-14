@@ -1,0 +1,50 @@
+{
+  "type": "object",
+  "properties": {
+    "provider": {
+      "title": "AI provider",
+      "description": "gemini or openai (any OpenAI-compatible endpoint: Groq, OpenRouter, Ollama, LM Studio, OpenAI, Azure proxy).",
+      "type": "string",
+      "enum": ["gemini", "openai"]
+    },
+    "geminiApiKey": {
+      "title": "Gemini API key",
+      "description": "Organization Gemini key. Use a paid-tier key for student records so data is not used for model training.",
+      "type": "string"
+    },
+    "openaiBaseUrl": {
+      "title": "OpenAI-compatible base URL",
+      "description": "Example: http://localhost:11434/v1 for Ollama.",
+      "type": "string"
+    },
+    "openaiApiKey": {
+      "title": "OpenAI-compatible API key",
+      "type": "string"
+    },
+    "fastModel": { "title": "Fast model", "type": "string" },
+    "smartModel": { "title": "Smart model", "type": "string" },
+    "liveModel": { "title": "Live voice model", "type": "string" },
+    "permissionMode": {
+      "title": "Forced permission mode",
+      "description": "review = approve every action, smart = approve risky actions, auto = full autopilot.",
+      "type": "string",
+      "enum": ["review", "smart", "auto"]
+    },
+    "allowAutopilot": {
+      "title": "Allow autopilot",
+      "description": "When false, users cannot pick full autopilot for web tasks or auto-post grades.",
+      "type": "boolean"
+    },
+    "blockedSites": {
+      "title": "Blocked sites",
+      "description": "Hostnames where DoTask must never act (for example payroll.example.com).",
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "lockSettings": {
+      "title": "Lock AI settings",
+      "description": "Hide provider/key/model fields from users.",
+      "type": "boolean"
+    }
+  }
+}

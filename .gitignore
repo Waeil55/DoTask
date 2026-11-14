@@ -1,0 +1,23 @@
+node_modules/
+dist/
+_archive/
+*.log
+.env
+test-results/
+
+# phone app build output (rebuilt by mobile/build.mjs)
+mobile/www/
+mobile/android/app/src/main/assets/public/
+mobile/ios/App/App/public/
+# signing material and store API keys never go into git
+*.jks
+*.keystore
+keystore.properties
+*.p8
+*.p12
+*.mobileprovision
+*.cer
+# local tool state
+.firebase/
+.wf-tmp/
+.env.*

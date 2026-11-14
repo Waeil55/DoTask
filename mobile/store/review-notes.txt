@@ -1,0 +1,40 @@
+DoTask 2.1.0 - notes for App Review
+
+WHAT THE APP IS
+DoTask is an AI assistant for teachers and adult learners (18+).
+- Teach: AI drafts of rubric scores and feedback for Canvas LMS submissions. The teacher reviews, edits and posts each one, one student at a time. It also drafts replies (submission comments, Inbox, discussions) and announcements.
+- Study: explain, summarize, quiz, flashcards and a study plan from a photo, a file or pasted text, plus a live voice tutor.
+- Write: draft, translate and polish text; copy, share or save as Word.
+It uses Google Gemini with the user's own API key. There is no DoTask server, no DoTask account, no in-app purchases, no ads and no analytics.
+
+HOW TO TEST
+1. Open the app. On the welcome screen choose "I teach". The screen lists what is sent to Google Gemini. Tap "Allow and continue". Nothing is sent to any AI before this.
+2. Open Settings, paste this review key and tap "Test connection":
+   {{REVIEWER_GEMINI_KEY}}
+   (Review-only key with a capped quota. We delete it after review.)
+3. Teach: tap "Try Demo School". A fictional school with sample courses, students and submissions: no Canvas account is needed and nothing goes to a real Canvas. Open a course, an assignment and a student, tap "Draft grade & feedback", edit it, then tap "Post to (name)".
+4. Study: paste a paragraph or take a photo of any printed page, then try Explain it, Quiz me or Flashcards. Tap "Start talking" for the voice tutor and talk to it; turn on "Show my camera" to let it see the page.
+5. Write: ask for a reply in any tone or language, then copy, share or save it as Word.
+6. Settings: usage and estimated cost, Back up (share sheet), and Delete all.
+
+DEMO ACCOUNT
+DoTask has no accounts of its own. Signing in to a real Canvas needs a developer key that a school's Canvas administrator creates for that school, so we cannot provide a working Canvas login. Please accept the built-in Demo School mode in place of a demo account: it runs the same Teach screens with fictional data. A real Canvas login is an existing education account issued by the school; DoTask signs in to it with OAuth and PKCE in the system browser and never sees the password (Apple Guideline 4.8 education exemption).
+
+PERMISSIONS
+The microphone is requested only when the user taps to start the voice tutor. The camera is requested only when the user takes a photo or turns on "Show my camera". Photos and files are chosen with the system picker. If any permission is denied, everything that does not need it keeps working.
+
+PRIVACY AND THIRD-PARTY AI
+Before any data goes to Google Gemini, the app shows what will be shared and asks for permission (Apple Guideline 5.1.2(i)). Data is sent only when a feature is used, straight from the device to Google over HTTPS/WSS, under the user's own key. Grading prompts leave out student names. Apart from these AI requests and the teacher's own Canvas API calls, everything stays on the device; the API key and Canvas tokens are kept in the iOS Keychain / Android Keystore. The developer receives no data.
+Privacy policy: https://dotask5.web.app/privacy.html
+
+ACCOUNTS AND DELETION
+Users cannot create an account in DoTask, so account-deletion rules do not apply (Apple 5.1.1(v)). Settings > Delete all erases student history, drafts and study files from the device. Removing the key and signing out of Canvas in Settings deletes the stored secrets.
+
+AI OUTPUT AND ACADEMIC INTEGRITY
+AI output is always a draft that the user reviews before posting or sharing. The tutor explains and quizzes; it does not complete graded quizzes or exams, and the phone app does not automate websites. DoTask never types passwords or payment details.
+
+AGE
+DoTask is for adults 18+. Google's Gemini API terms do not allow apps directed to people under 18, so it is rated 18+ and not directed to children.
+
+DoTask is independent and is not affiliated with Instructure (Canvas) or Google.
+Contact: waeil.usa@gmail.com

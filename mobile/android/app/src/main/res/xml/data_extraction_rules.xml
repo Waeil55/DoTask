@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Android 12+ (API 31+): exclude ALL app data from Google cloud backup and from
+  device-to-device transfer (new-phone setup / cable migration).
+  Why: student records must not end up in a personal Google Drive, and secrets are
+  wrapped by this device's Android Keystore, so a copy on another device is useless.
+  "root" is the whole app data dir (WebView storage, files, databases, prefs); the
+  other domains are listed explicitly as a belt-and-braces measure.
+  The app does not use device-protected (direct boot) storage, so no device_* domains.
+-->
+<data-extraction-rules>
+    <cloud-backup>
+        <exclude domain="root" path="." />
+        <exclude domain="file" path="." />
+        <exclude domain="database" path="." />
+        <exclude domain="sharedpref" path="." />
+        <exclude domain="external" path="." />
+    </cloud-backup>
+    <device-transfer>
+        <exclude domain="root" path="." />
+        <exclude domain="file" path="." />
+        <exclude domain="database" path="." />
+        <exclude domain="sharedpref" path="." />
+        <exclude domain="external" path="." />
+    </device-transfer>
+</data-extraction-rules>

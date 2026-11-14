@@ -1,0 +1,25 @@
+# Store text with LF in the repository; Windows checkouts may still use CRLF for ordinary text.
+* text=auto
+
+# Files that macOS/Linux tools read on the CI runners (Xcode, bash, Gradle) must stay LF even
+# when the repo is edited on Windows: CRLF breaks shebangs ("bad interpreter") and makes Xcode
+# rewrite whole project files.
+mobile/ios/** text eol=lf
+*.sh text eol=lf
+mobile/android/gradlew text eol=lf
+*.yml text eol=lf
+*.pbxproj text eol=lf
+*.plist text eol=lf
+*.xcprivacy text eol=lf
+*.swift text eol=lf
+
+# Binary files: no line-ending conversion, no text diffs. These lines come last so they win
+# over "mobile/ios/** text" for the app icons and splash images under mobile/ios.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.jks binary
+*.p8 binary
+*.ttf binary
+*.woff2 binary
+*.jar binary

@@ -1,0 +1,67 @@
+/* Phone layout on top of the extension's sidepanel.css: tab bar at the bottom, safe areas
+   (notch, home indicator), 44px touch targets, 16px inputs so iOS does not zoom. */
+
+html, body { height: 100%; overscroll-behavior: none }
+body.phone { font-size: 15px; -webkit-text-size-adjust: 100%; -webkit-tap-highlight-color: transparent }
+
+body.phone header.top {
+  padding-top: calc(env(safe-area-inset-top) + 8px);
+  padding-left: calc(env(safe-area-inset-left) + 14px);
+  padding-right: calc(env(safe-area-inset-right) + 14px);
+}
+
+body.phone main { order: 2 }
+body.phone nav.tabs {
+  order: 3;
+  position: static;
+  border-bottom: 0;
+  border-top: 1px solid var(--line);
+  padding: 4px calc(env(safe-area-inset-right) + 6px) calc(env(safe-area-inset-bottom) + 4px) calc(env(safe-area-inset-left) + 6px);
+  background: var(--panel);
+}
+body.phone nav.tabs button {
+  min-height: 52px;
+  border-radius: 12px;
+  border-bottom: 0;
+  font-size: 11px;
+  gap: 3px;
+}
+body.phone nav.tabs button .ico { font-size: 22px }
+body.phone nav.tabs button[aria-selected="true"] { background: var(--primary-soft) }
+body.phone nav.tabs button:hover { background: none }
+body.phone nav.tabs button[aria-selected="true"]:hover { background: var(--primary-soft) }
+
+body.phone .scroll { padding: 14px calc(env(safe-area-inset-right) + 14px) 24px calc(env(safe-area-inset-left) + 14px); -webkit-overflow-scrolling: touch }
+body.phone .composer-wrap { padding-left: calc(env(safe-area-inset-left) + 10px); padding-right: calc(env(safe-area-inset-right) + 10px) }
+
+/* touch targets */
+body.phone .btn { min-height: 44px; padding-left: 14px; padding-right: 14px }
+body.phone .btn.sm { min-height: 38px }
+body.phone .icon-btn { min-width: 44px; min-height: 44px }
+body.phone .chip { min-height: 38px; padding: 8px 12px }
+body.phone .seg button { min-height: 40px }
+body.phone .item { min-height: 52px }
+
+/* 16px stops iOS from zooming into fields */
+body.phone input, body.phone select, body.phone textarea, body.phone .input { font-size: 16px }
+
+body.phone dialog.dialog {
+  width: min(560px, calc(100vw - 24px));
+  max-height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 24px);
+  overflow-y: auto;
+}
+.welcome-dialog h2 { font-size: 22px; margin-bottom: 4px }
+.welcome-dialog .consent ul { margin: 6px 0 8px; padding-left: 18px }
+.welcome-dialog .consent li { margin: 3px 0 }
+
+.camera-preview {
+  display: block;
+  width: 100%;
+  max-height: 34vh;
+  object-fit: cover;
+  border-radius: 12px;
+  margin-top: 10px;
+  background: #000;
+}
+
+.canvas-token-form .steps li { margin: 4px 0 }

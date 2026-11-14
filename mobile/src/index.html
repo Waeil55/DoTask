@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="light dark">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' capacitor: https://localhost; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: mediastream:; connect-src 'self' https: wss://generativelanguage.googleapis.com; worker-src 'self' blob:; frame-src 'none'; object-src 'none'; base-uri 'none'">
+  <title>DoTask</title>
+  <link rel="stylesheet" href="sidepanel.css">
+  <link rel="stylesheet" href="mobile.css">
+</head>
+<body>
+  <header class="top">
+    <div class="brand"><img src="icons/icon32.png" alt="">DoTask</div>
+  </header>
+  <main>
+    <section class="view" id="view-teach"></section>
+    <section class="view" id="view-study"></section>
+    <section class="view" id="view-write"></section>
+    <section class="view" id="view-settings"></section>
+  </main>
+  <nav class="tabs" role="tablist" aria-label="DoTask sections">
+    <button role="tab" data-view="teach"><span class="ico" aria-hidden="true">🍎</span>Teach</button>
+    <button role="tab" data-view="study"><span class="ico" aria-hidden="true">🎓</span>Study</button>
+    <button role="tab" data-view="write"><span class="ico" aria-hidden="true">✉️</span>Write</button>
+    <button role="tab" data-view="settings"><span class="ico" aria-hidden="true">⚙️</span>Settings</button>
+  </nav>
+  <script type="module" src="app.js"></script>
+</body>
+</html>
